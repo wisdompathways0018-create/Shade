@@ -147,10 +147,6 @@ for trigger, reply_list in responses.items():
         await message.channel.send(random.choice(reply_list))
         break
 
-    for trigger, reply_list in responses.items():
-        if trigger in text:
-            await message.channel.send(random.choice(reply_list))
-            break
 
     await bot.process_commands(message)
 
