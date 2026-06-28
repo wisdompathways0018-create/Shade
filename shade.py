@@ -133,6 +133,25 @@ async def on_message(message):
         await message.channel.send(f"You're **{message.author.display_name}** 👑")
         return
 
+if text.startswith("roast") and message.mentions:
+    target = message.mentions[0]
+
+    roasts = [
+        f"💀 {target.mention} has a better chance of tripping over Wi-Fi than winning.",
+        f"😂 {target.mention} plays so badly even tutorials feel insulted.",
+        f"🤡 {target.mention} is living proof that confidence isn't the same as skill.",
+        f"📉 {target.mention}'s gameplay should be classified as a natural disaster.",
+        f"🎮 {target.mention} is the reason the enemy team smiles.",
+        f"🗑️ {target.mention} couldn't carry a backpack, let alone the team.",
+        f"☠️ {target.mention} has mastered the art of spectacular failure.",
+        f"🚪 {target.mention} joined the game just to lower the average IQ.",
+        f"🐢 {target.mention} reacts so slowly that the match already ended.",
+        f"🔥 {target.mention} is the MVP... for the opposing team."
+    ]
+
+    await message.channel.send(random.choice(roasts))
+    return
+
     for trigger, reply_list in responses.items():
         if trigger in text:
             await message.channel.send(random.choice(reply_list))
