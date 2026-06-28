@@ -92,6 +92,35 @@ responses = {
     "I'm listening."
 ]
 
+"who asked": [
+    "Apparently you did. 😂",
+    "Interesting question.",
+    "Someone had to."
+],
+
+"im cooked": [
+    "Absolutely cooked. 🍳",
+    "Beyond saving.",
+    "RIP."
+],
+
+"let him cook": [
+    "We'll see if it burns. 🔥",
+    "Cooking in progress...",
+    "Chef mode activated."
+],
+
+"nah": [
+    "Understandable.",
+    "Fair enough.",
+    "No means no."
+],
+
+"brb": [
+    "I'll be here.",
+    "Take your time.",
+    "Don't get lost."
+]
 }
 
 @bot.event
