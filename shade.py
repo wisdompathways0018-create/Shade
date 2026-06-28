@@ -133,7 +133,7 @@ async def on_message(message):
         await message.channel.send(f"You're **{message.author.display_name}** 👑")
         return
 
-if text.startswith("roast") and message.mentions:
+if text.startswith("roast ") and len(message.mentions) > 0:
     target = message.mentions[0]
 
     roasts = [
