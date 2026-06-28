@@ -133,7 +133,6 @@ async def on_message(message):
         return
 
     text = message.content.lower()
-text = message.content.lower()
 
 if "what's my name" in text or "what is my name" in text:
     await message.channel.send(f"Your name is **{message.author.display_name}** 😎")
