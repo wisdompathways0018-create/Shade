@@ -1,12 +1,13 @@
-import os
+ import os
+import random
 import discord
 from discord.ext import commands
-import random
 
 TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 responses = {
@@ -15,112 +16,102 @@ responses = {
         "Mission failed successfully.",
         "Peak performance."
     ],
+
     "lost": [
         "💀 Skill issue detected.",
         "GG... for the other side.",
         "That didn't go as planned."
     ],
-"hi": [
-    "Hey! 👋",
-    "Hello there!",
-    "Welcome!"
-],
 
-"hello": [
-    "Hi! 😄",
-    "Greetings!",
-    "Hey, how's it going?"
-],
+    "hi": [
+        "Hey! 👋",
+        "Hello there!",
+        "Welcome!"
+    ],
 
-"bye": [
-    "See you later! 👋",
-    "Take care!",
-    "Goodbye!"
-],
+    "hello": [
+        "Hi! 😊",
+        "Greetings!",
+        "Hey, how's it going?"
+    ],
 
-"thanks": [
-    "You're welcome! ❤️",
-    "Anytime!",
-    "Glad to help!"
-],
+    "bye": [
+        "See you later! 👋",
+        "Take care!",
+        "Goodbye!"
+    ],
 
-"gg": [
-    "GG! 🔥",
-    "Well played!",
-    "Respect."
-],
+    "thanks": [
+        "You're welcome! ❤️",
+        "Anytime!",
+        "Glad to help!"
+    ],
 
-"ez": [
-    "😂 Sure it was.",
-    "Confidence level: 100%.",
-    "We'll allow it."
-],
+    "gg": [
+        "GG! 🔥",
+        "Well played!",
+        "Respect."
+    ],
 
-"win": [
-    "Victory! 🏆",
-    "Let's gooo! 🔥",
-    "Champion vibes!"
-],
+    "ez": [
+        "😂 Sure it was.",
+        "Confidence level: 100%.",
+        "We'll allow it."
+    ],
 
-"lose": [
-    "You'll get them next time.",
-    "Every loss is a lesson.",
-    "Keep fighting!"
-],
+    "win": [
+        "Victory! 🏆",
+        "Let's gooo! 🔥",
+        "Champion vibes!"
+    ],
 
-"lol": [
-    "🤣",
-    "LMAO 😂",
-    "That was funny!"
-],
+    "lose": [
+        "You'll get them next time.",
+        "Every loss is a lesson.",
+        "Keep fighting!"
+    ],
 
-"bot": [
-    "Yes? I'm awake. 🤖",
-    "At your service!",
-    "What's up?"
-],
+    "lol": [
+        "🤣",
+        "LMAO 😂",
+        "That was funny!"
+    ],
 
-"shadow": [
-    "Shadow Sovereign has arrived. 🌑",
-    "Darkness answers your call.",
-    "All hail the Shadow."
-],
+    "bot": [
+        "Yes? I'm awake. 🤖",
+        "At your service!",
+        "What's up?"
+    ],
 
-"help": [
-    "How can I help?",
-    "Type something interesting!",
-    "I'm listening."
-],
+    "shadow": [
+        "Shadow Sovereign has arrived. 🌑",
+        "Darkness answers your call.",
+        "All hail the Shadow."
+    ],
 
-"who asked": [
-    "Apparently you did. 😂",
-    "Interesting question.",
-    "Someone had to."
-],
+    "help": [
+        "How can I help?",
+        "Type something interesting!",
+        "I'm listening."
+    ],
 
-"im cooked": [
-    "Absolutely cooked. 🍳",
-    "Beyond saving.",
-    "RIP."
-],
+    "let him cook": [
+        "We'll see if it burns. 🔥",
+        "Cooking in progress...",
+        "Chef mode activated."
+    ],
 
-"let him cook": [
-    "We'll see if it burns. 🔥",
-    "Cooking in progress...",
-    "Chef mode activated."
-],
+    "nah": [
+        "Understandable.",
+        "Fair enough.",
+        "No means no."
+    ],
 
-"nah": [
-    "Understandable.",
-    "Fair enough.",
-    "No means no."
-],
-
-"brb": [
-    "I'll be here.",
-    "Take your time.",
-    "Don't get lost."
-]
+    "brb": [
+        "I'll be here.",
+        "Take your time.",
+        "Don't get lost."
+    ]
 }
 
 @bot.event
@@ -134,19 +125,18 @@ async def on_message(message):
 
     text = message.content.lower()
 
-if "what's my name" in text or "what is my name" in text:
-    await message.channel.send(f"Your name is **{message.author.display_name}** 😎")
-    return
+    if "what's my name" in text or "what is my name" in text:
+        await message.channel.send(f"Your name is **{message.author.display_name}** 😎")
+        return
 
-if "who am i" in text:
-    await message.channel.send(f"You're **{message.author.display_name}** 👑")
-    return
+    if "who am i" in text:
+        await message.channel.send(f"You're **{message.author.display_name}** 👑")
+        return
 
-for trigger, reply_list in responses.items():
-    if trigger in text:
-        await message.channel.send(random.choice(reply_list))
-        break
-
+    for trigger, reply_list in responses.items():
+        if trigger in text:
+            await message.channel.send(random.choice(reply_list))
+            break
 
     await bot.process_commands(message)
 
