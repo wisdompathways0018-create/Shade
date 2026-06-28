@@ -90,7 +90,7 @@ responses = {
     "How can I help?",
     "Type something interesting!",
     "I'm listening."
-]
+],
 
 "who asked": [
     "Apparently you did. 😂",
