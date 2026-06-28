@@ -133,6 +133,20 @@ async def on_message(message):
         return
 
     text = message.content.lower()
+text = message.content.lower()
+
+if "what's my name" in text or "what is my name" in text:
+    await message.channel.send(f"Your name is **{message.author.display_name}** 😎")
+    return
+
+if "who am i" in text:
+    await message.channel.send(f"You're **{message.author.display_name}** 👑")
+    return
+
+for trigger, reply_list in responses.items():
+    if trigger in text:
+        await message.channel.send(random.choice(reply_list))
+        break
 
     for trigger, reply_list in responses.items():
         if trigger in text:
