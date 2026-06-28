@@ -147,7 +147,7 @@ if text.startswith("roast") and message.mentions:
         f"🚪 {target.mention} joined the game just to lower the average IQ.",
         f"🐢 {target.mention} reacts so slowly that the match already ended.",
         f"🔥 {target.mention} is the MVP... for the opposing team."
-    ]
+    ],
 
     await message.channel.send(random.choice(roasts))
     return
