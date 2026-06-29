@@ -144,6 +144,24 @@ async def on_message(message):
         if trigger in text:
             await message.channel.send(random.choice(reply_list))
             break
+# Rate command
+    if text.startswith("rate ") and len(message.mentions) > 0:
+        target = message.mentions[0]
+
+        score = random.randint(0, 100)
+
+        comments = [
+            "💀 Absolutely cooked.",
+            "😂 Could be better.",
+            "😎 Pretty decent!",
+            "🔥 Looking strong!",
+            "👑 Legendary!"
+        ]
+
+        await message.channel.send(
+            f"{target.mention} gets **{score}/100**!\n{random.choice(comments)}"
+        )
+        return
 
     # Roast command
     if text.startswith("roast ") and len(message.mentions) > 0:
