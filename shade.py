@@ -117,6 +117,7 @@ async def on_message(message):
         return
 
     text = message.content.lower()
+    config = get_server(message.guild.id) if message.guild else None
 
     # What's my name
     if "what's my name" in text or "what is my name" in text:
