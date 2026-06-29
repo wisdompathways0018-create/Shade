@@ -408,6 +408,10 @@ async def on_app_command_error(
     except Exception as e:
         print(e)
 
+import events
+
+events.setup(bot)
+
 
 # ==========================================
 # Start Shade
