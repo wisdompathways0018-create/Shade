@@ -165,7 +165,7 @@ async def on_message(message):
         return
 
     # King command
-    if text == "king":
+    if "king" in text:
         members = [member for member in message.guild.members if not member.bot]
 
         king = random.choice(members)
