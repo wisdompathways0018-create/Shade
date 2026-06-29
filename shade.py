@@ -11,6 +11,8 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+last_reply = 0
+
 responses = {
     "oops": [
         "😂 Nice one.",
