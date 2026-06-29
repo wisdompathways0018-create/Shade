@@ -5,6 +5,7 @@ from config import get_server, save_server
 
 
 class Frost(app_commands.Group):
+
     def __init__(self):
         super().__init__(
             name="frost",
@@ -16,7 +17,7 @@ class Frost(app_commands.Group):
         description="Create a Frost reminder"
     )
     @app_commands.describe(
-        city="Frost city name",
+        city="Frost city",
         time="Example: 20:00"
     )
     async def create(
@@ -28,29 +29,31 @@ class Frost(app_commands.Group):
 
         if interaction.guild is None:
             await interaction.response.send_message(
-                "❌ Server only.",
+                "❌ This command can only be used in a server.",
                 ephemeral=True
             )
             return
 
         config = get_server(interaction.guild.id)
 
-        config["frost"].append({
-            "city": city,
-            "time": time
-        })
+        config["frost"].append(
+            {
+                "city": city,
+                "time": time
+            }
+        )
 
         save_server()
 
         await interaction.response.send_message(
-            f"❄ Frost added!\n"
-            f"City: **{city}**\n"
-            f"Time: **{time}**"
+            f"✅ Frost event created!\n"
+            f"❄ City: **{city}**\n"
+            f"🕒 Time: **{time}**"
         )
 
     @app_commands.command(
         name="list",
-        description="Show all Frost events"
+        description="List all Frost events"
     )
     async def list(
         self,
@@ -59,7 +62,7 @@ class Frost(app_commands.Group):
 
         if interaction.guild is None:
             await interaction.response.send_message(
-                "❌ Server only.",
+                "❌ This command can only be used in a server.",
                 ephemeral=True
             )
             return
@@ -68,9 +71,9 @@ class Frost(app_commands.Group):
 
         frost = config.get("frost", [])
 
-        if not frost:
+        if len(frost) == 0:
             await interaction.response.send_message(
-                "❄ No Frost events found."
+                "❄ No Frost events have been created."
             )
             return
 
@@ -83,12 +86,120 @@ class Frost(app_commands.Group):
 
             embed.add_field(
                 name=f"{index}. {event['city']}",
-                value=f"Time: {event['time']}",
+                value=f"🕒 {event['time']}",
                 inline=False
             )
 
         await interaction.response.send_message(
             embed=embed
+        )
+    @app_commands.command(
+        name="delete",
+        description="Delete a Frost event"
+    )
+    @app_commands.describe(
+        number="Event number from /frost list"
+    )
+    async def delete(
+        self,
+        interaction: discord.Interaction,
+        number: int
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ This command can only be used in a server.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+
+        frost = config.get("frost", [])
+
+        if number < 1 or number > len(frost):
+            await interaction.response.send_message(
+                "❌ Invalid event number."
+            )
+            return
+
+        removed = frost.pop(number - 1)
+
+        save_server()
+
+        await interaction.response.send_message(
+            f"🗑 Deleted Frost event **{removed['city']}** ({removed['time']})"
+        )
+
+
+    @app_commands.command(
+        name="clear",
+        description="Delete all Frost events"
+    )
+    async def clear(
+        self,
+        interaction: discord.Interaction
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ This command can only be used in a server.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+
+        config["frost"] = []
+
+        save_server()
+
+        await interaction.response.send_message(
+            "🧹 All Frost events have been deleted."
+        )
+    @app_commands.command(
+        name="edit",
+        description="Edit a Frost event"
+    )
+    @app_commands.describe(
+        number="Event number from /frost list",
+        city="New city name",
+        time="New time (Example: 20:00)"
+    )
+    async def edit(
+        self,
+        interaction: discord.Interaction,
+        number: int,
+        city: str,
+        time: str
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ This command can only be used in a server.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+
+        frost = config.get("frost", [])
+
+        if number < 1 or number > len(frost):
+            await interaction.response.send_message(
+                "❌ Invalid event number."
+            )
+            return
+
+        frost[number - 1]["city"] = city
+        frost[number - 1]["time"] = time
+
+        save_server()
+
+        await interaction.response.send_message(
+            f"✏️ Frost event #{number} updated.\n"
+            f"❄ City: **{city}**\n"
+            f"🕒 Time: **{time}**"
         )
 
 
