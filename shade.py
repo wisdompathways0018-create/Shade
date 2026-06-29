@@ -203,10 +203,11 @@ async def on_message(message):
         ]
 
         await message.channel.send(random.choice(king_messages))
-        return
-# Alliance command
-if text.startswith("!alliance"):
-    if config is None:
+      return
+
+        # Alliance command
+        if text.startswith("!alliance"):
+        if config is None:
         return
 
     alliance_name = message.content[10:].strip()
