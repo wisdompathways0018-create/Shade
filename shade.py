@@ -117,7 +117,10 @@ async def on_message(message):
         return
 
     text = message.content.lower()
-    config = get_server(message.guild.id) if message.guild else None
+
+    config = None
+    if message.guild:
+        config = get_server(message.guild.id)
 
     # What's my name
     if "what's my name" in text or "what is my name" in text:
@@ -133,12 +136,14 @@ async def on_message(message):
         )
         return
 
-    # Auto replies (30 sec cooldown + 30% chance)
+    # Auto replies
     for trigger, reply_list in responses.items():
         if trigger in text:
             if time.time() - last_reply >= 30:
                 if random.randint(1, 100) <= 30:
-                    await message.channel.send(random.choice(reply_list))
+                    await message.channel.send(
+                        random.choice(reply_list)
+                    )
                     last_reply = time.time()
             break
 
@@ -180,50 +185,3 @@ async def on_message(message):
 
         await message.channel.send(random.choice(roasts))
         return
-
-    # King command
-    if text == "king":
-        if message.guild is None:
-            return
-
-        members = [m for m in message.guild.members if not m.bot]
-
-        if not members:
-            await message.channel.send("👑 No members found.")
-            return
-
-        king = random.choice(members)
-
-        king_messages = [
-            f"👑 Today's King is... {king.mention}! Long live the King!",
-            f"🏆 The crown chooses {king.mention} today!",
-            f"⚔️ All hail {king.mention}, ruler of the server!",
-            f"👑 {king.mention} has claimed the throne today.",
-            f"🎉 The kingdom belongs to {king.mention}!"
-        ]
-
-        await message.channel.send(random.choice(king_messages))
-return
-
-    # Alliance command
-    if text.startswith("!alliance"):
-        if config is None:
-            return
-
-        alliance_name = message.content[10:].strip()
-
-        if alliance_name == "":
-            await message.channel.send("❌ Please enter an alliance name.")
-            return
-
-        config["alliance_name"] = alliance_name
-
-        await message.channel.send(
-            f"✅ Alliance name set to **{alliance_name}**!"
-        )
-        return
-        
-    await bot.process_commands(message)
-
-
-bot.run(TOKEN)
