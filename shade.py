@@ -1,8 +1,11 @@
 import os
 import random
 import time
+
 import discord
 from discord.ext import commands
+from discord import app_commands
+
 from config import get_server
 
 TOKEN = os.getenv("TOKEN")
@@ -10,107 +13,69 @@ TOKEN = os.getenv("TOKEN")
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.guilds = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents
+)
 
 last_reply = 0
 
 responses = {
-    "oops": [
-        "😂 Nice one.",
-        "Mission failed successfully.",
-        "Peak performance."
-    ],
-    "lost": [
-        "💀 Skill issue detected.",
-        "GG... for the other side.",
-        "That didn't go as planned."
-    ],
     "hi": [
         "Hey! 👋",
         "Hello there!",
         "Welcome!"
     ],
+
     "hello": [
         "Hi! 😊",
-        "Greetings!",
-        "Hey, how's it going?"
+        "Greetings!"
     ],
-    "bye": [
-        "See you later! 👋",
-        "Take care!",
-        "Goodbye!"
-    ],
-    "thanks": [
-        "You're welcome! ❤️",
-        "Anytime!",
-        "Glad to help!"
-    ],
+
     "gg": [
         "GG! 🔥",
-        "Well played!",
-        "Respect."
+        "Well played!"
     ],
-    "ez": [
-        "😂 Sure it was.",
-        "Confidence level: 100%.",
-        "We'll allow it."
+
+    "thanks": [
+        "You're welcome! ❤️",
+        "Anytime!"
     ],
-    "win": [
-        "Victory! 🏆",
-        "Let's gooo! 🔥",
-        "Champion vibes!"
-    ],
-    "lose": [
-        "You'll get them next time.",
-        "Every loss is a lesson.",
-        "Keep fighting!"
-    ],
+
     "lol": [
         "🤣",
-        "LMAO 😂",
-        "That was funny!"
+        "😂"
     ],
-    "bot": [
-        "Yes? I'm awake. 🤖",
-        "At your service!",
-        "What's up?"
-    ],
+
     "shadow": [
-        "Shadow Sovereign has arrived. 🌑",
-        "Darkness answers your call.",
-        "All hail the Shadow."
+        "🌑 Shadow Sovereign has arrived.",
+        "Darkness answers your call."
     ],
-    "help": [
-        "How can I help?",
-        "Type something interesting!",
-        "I'm listening."
-    ],
-    "let him cook": [
-        "We'll see if it burns. 🔥",
-        "Cooking in progress...",
-        "Chef mode activated."
-    ],
-    "nah": [
-        "Understandable.",
-        "Fair enough.",
-        "No means no."
-    ],
-    "brb": [
-        "I'll be here.",
-        "Take your time.",
-        "Don't get lost."
+
+    "oops": [
+        "Mission failed successfully 😂",
+        "Peak performance."
     ]
 }
 
 
 @bot.event
 async def on_ready():
-    print(f"{bot.user} is online!")
+
+    try:
+        synced = await bot.tree.sync()
+        print(f"✅ Synced {len(synced)} slash commands.")
+    except Exception as e:
+        print(f"❌ Failed to sync commands: {e}")
+
+    print(f"🤖 Logged in as {bot.user}")
 
 
 @bot.event
 async def on_message(message):
+
     global last_reply
 
     if message.author.bot:
@@ -118,143 +83,331 @@ async def on_message(message):
 
     text = message.content.lower()
 
-    config = None
-    if message.guild:
-        config = get_server(message.guild.id)
-
-    # What's my name
-    if "what's my name" in text or "what is my name" in text:
-        await message.channel.send(
-            f"Your name is **{message.author.display_name}** 😎"
-        )
-        return
-
-    # Who am I
-    if "who am i" in text:
-        await message.channel.send(
-            f"You're **{message.author.display_name}** 👑"
-        )
-        return
-
-    # Auto replies
     for trigger, reply_list in responses.items():
+
         if trigger in text:
+
             if time.time() - last_reply >= 30:
+
                 if random.randint(1, 100) <= 30:
+
                     await message.channel.send(
                         random.choice(reply_list)
                     )
+
                     last_reply = time.time()
+
             break
-
-    # Rate command
-    if text.startswith("rate ") and message.mentions:
-        target = message.mentions[0]
-
-        score = random.randint(0, 100)
-
-        comments = [
-            "💀 Absolutely cooked.",
-            "😂 Could be better.",
-            "😎 Pretty decent!",
-            "🔥 Looking strong!",
-            "👑 Legendary!"
-        ]
-
-        await message.channel.send(
-            f"{target.mention} gets **{score}/100**!\n{random.choice(comments)}"
-        )
-        return
-
-    # Roast command
-    if text.startswith("roast ") and message.mentions:
-        target = message.mentions[0]
-
-        roasts = [
-            f"💀 {target.mention} has a better chance of tripping over Wi-Fi than winning.",
-            f"😂 {target.mention} plays so badly even tutorials feel insulted.",
-            f"🤡 {target.mention} is living proof that confidence isn't the same as skill.",
-            f"📉 {target.mention}'s gameplay should be classified as a natural disaster.",
-            f"🎮 {target.mention} is the reason the enemy team smiles.",
-            f"🗑️ {target.mention} couldn't carry a backpack, let alone the team.",
-            f"☠️ {target.mention} has mastered the art of spectacular failure.",
-            f"🚪 {target.mention} joined the game just to lower the average IQ.",
-            f"🐢 {target.mention} reacts so slowly that the match already ended.",
-            f"🔥 {target.mention} is the MVP... for the opposing team."
-        ]
-
-        await message.channel.send(random.choice(roasts))
-        return
-
-     # King command
-    if text == "king":
-        if message.guild is None:
-            return
-
-        members = [m for m in message.guild.members if not m.bot]
-
-        if not members:
-            await message.channel.send("👑 No members found.")
-            return
-
-        king = random.choice(members)
-
-        king_messages = [
-            f"👑 Today's King is... {king.mention}! Long live the King!",
-            f"🏆 The crown chooses {king.mention} today!",
-            f"⚔️ All hail {king.mention}, ruler of the server!",
-            f"👑 {king.mention} has claimed the throne today.",
-            f"🎉 The kingdom belongs to {king.mention}!"
-        ]
-
-        await message.channel.send(random.choice(king_messages))
-        return
-
-   # Alliance command
-    if text.startswith("!alliance"):
-        if config is None:
-            return
-
-        parts = message.content.split(maxsplit=1)
-
-        if len(parts) < 2:
-            await message.channel.send(
-                "❌ Usage: `!alliance Your Alliance Name`"
-            )
-            return
-
-        alliance_name = parts[1].strip()
-
-        config["alliance_name"] = alliance_name
-
-        await message.channel.send(
-            f"✅ Alliance name set to **{alliance_name}**!"
-        )
-        return
-
-    # Timezone command
-    if text.startswith("!timezone"):
-        if config is None:
-            return
-
-        parts = message.content.split(maxsplit=1)
-
-        if len(parts) < 2:
-            await message.channel.send(
-                "❌ Usage: `!timezone UTC+5:30`"
-            )
-            return
-
-        timezone = parts[1].strip()
-
-        config["timezone"] = timezone
-
-        await message.channel.send(
-            f"🌍 Timezone set to **{timezone}**!"
-        )
-        return
 
     await bot.process_commands(message)
 
+# ==========================================
+# Fun Slash Commands
+# ==========================================
 
-bot.run(TOKEN)
+@bot.tree.command(
+    name="king",
+    description="Choose today's King"
+)
+async def king(interaction: discord.Interaction):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    members = [
+        m for m in interaction.guild.members
+        if not m.bot
+    ]
+
+    if not members:
+        await interaction.response.send_message(
+            "👑 No members found."
+        )
+        return
+
+    chosen = random.choice(members)
+
+    messages = [
+        f"👑 Today's King is {chosen.mention}! Long live the King!",
+        f"🏆 The crown chooses {chosen.mention} today!",
+        f"⚔️ All hail {chosen.mention}, ruler of the server!",
+        f"🎉 {chosen.mention} has claimed the throne!"
+    ]
+
+    await interaction.response.send_message(
+        random.choice(messages)
+    )
+
+
+@bot.tree.command(
+    name="rate",
+    description="Rate a member"
+)
+@app_commands.describe(
+    member="Choose a member"
+)
+async def rate(
+    interaction: discord.Interaction,
+    member: discord.Member
+):
+
+    score = random.randint(0, 100)
+
+    comments = [
+        "💀 Absolutely cooked.",
+        "😂 Could be better.",
+        "😎 Pretty decent!",
+        "🔥 Looking strong!",
+        "👑 Legendary!"
+    ]
+
+    await interaction.response.send_message(
+        f"{member.mention} gets **{score}/100**!\n{random.choice(comments)}"
+    )
+
+
+@bot.tree.command(
+    name="roast",
+    description="Roast a member"
+)
+@app_commands.describe(
+    member="Choose a member"
+)
+async def roast(
+    interaction: discord.Interaction,
+    member: discord.Member
+):
+
+    roasts = [
+        f"💀 {member.mention} has a better chance of tripping over Wi-Fi than winning.",
+        f"😂 {member.mention} plays so badly even tutorials feel insulted.",
+        f"🤡 {member.mention} is living proof that confidence isn't the same as skill.",
+        f"📉 {member.mention}'s gameplay should be classified as a natural disaster.",
+        f"🎮 {member.mention} is the reason the enemy team smiles.",
+        f"🗑️ {member.mention} couldn't carry a backpack, let alone the team.",
+        f"☠️ {member.mention} has mastered the art of spectacular failure.",
+        f"🔥 {member.mention} is the MVP... for the opposing team."
+    ]
+
+    await interaction.response.send_message(
+        random.choice(roasts)
+    )
+
+# ==========================================
+# Alliance Setup Commands
+# ==========================================
+
+@bot.tree.command(
+    name="alliance",
+    description="Set your alliance name"
+)
+@app_commands.describe(
+    name="Alliance name"
+)
+async def alliance(
+    interaction: discord.Interaction,
+    name: str
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["alliance_name"] = name
+
+    await interaction.response.send_message(
+        f"✅ Alliance set to **{name}**"
+    )
+
+
+@bot.tree.command(
+    name="timezone",
+    description="Set your alliance timezone"
+)
+@app_commands.describe(
+    timezone="Example: UTC+5:30"
+)
+async def timezone(
+    interaction: discord.Interaction,
+    timezone: str
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["timezone"] = timezone
+
+    await interaction.response.send_message(
+        f"🌍 Timezone updated to **{timezone}**"
+    )
+
+
+@bot.tree.command(
+    name="pingrole",
+    description="Set the role to ping for reminders"
+)
+@app_commands.describe(
+    role="Select a role"
+)
+async def pingrole(
+    interaction: discord.Interaction,
+    role: discord.Role
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["ping_role"] = role.id
+
+    await interaction.response.send_message(
+        f"✅ Ping role set to {role.mention}"
+    )
+
+
+@bot.tree.command(
+    name="eventchannel",
+    description="Set the reminder channel"
+)
+@app_commands.describe(
+    channel="Select a text channel"
+)
+async def eventchannel(
+    interaction: discord.Interaction,
+    channel: discord.TextChannel
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["reminder_channel"] = channel.id
+
+    await interaction.response.send_message(
+        f"✅ Reminder channel set to {channel.mention}"
+    )
+
+
+@bot.tree.command(
+    name="setup",
+    description="View your Shade configuration"
+)
+async def setup(interaction: discord.Interaction):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    embed = discord.Embed(
+        title="🌑 Shade Configuration",
+        color=discord.Color.dark_gray()
+    )
+
+    embed.add_field(
+        name="Alliance",
+        value=config.get("alliance_name") or "Not Set",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Timezone",
+        value=config.get("timezone") or "UTC",
+        inline=False
+    )
+
+    if config.get("ping_role"):
+        role = interaction.guild.get_role(config["ping_role"])
+        ping = role.mention if role else "Unknown Role"
+    else:
+        ping = "Not Set"
+
+    embed.add_field(
+        name="Ping Role",
+        value=ping,
+        inline=False
+    )
+
+    if config.get("reminder_channel"):
+        channel = interaction.guild.get_channel(
+            config["reminder_channel"]
+        )
+        reminder = channel.mention if channel else "Unknown Channel"
+    else:
+        reminder = "Not Set"
+
+    embed.add_field(
+        name="Reminder Channel",
+        value=reminder,
+        inline=False
+    )
+
+    await interaction.response.send_message(
+        embed=embed
+    )
+
+# ==========================================
+# Global Error Handler
+# ==========================================
+
+@bot.tree.error
+async def on_app_command_error(
+    interaction: discord.Interaction,
+    error: app_commands.AppCommandError
+):
+
+    try:
+
+        if interaction.response.is_done():
+
+            await interaction.followup.send(
+                f"❌ Error: {error}",
+                ephemeral=True
+            )
+
+        else:
+
+            await interaction.response.send_message(
+                f"❌ Error: {error}",
+                ephemeral=True
+            )
+
+    except Exception as e:
+        print(e)
+
+
+# ==========================================
+# Start Shade
+# ==========================================
+
+if __name__ == "__main__":
+    bot.run(TOKEN)
