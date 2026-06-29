@@ -185,3 +185,76 @@ async def on_message(message):
 
         await message.channel.send(random.choice(roasts))
         return
+
+     # King command
+    if text == "king":
+        if message.guild is None:
+            return
+
+        members = [m for m in message.guild.members if not m.bot]
+
+        if not members:
+            await message.channel.send("👑 No members found.")
+            return
+
+        king = random.choice(members)
+
+        king_messages = [
+            f"👑 Today's King is... {king.mention}! Long live the King!",
+            f"🏆 The crown chooses {king.mention} today!",
+            f"⚔️ All hail {king.mention}, ruler of the server!",
+            f"👑 {king.mention} has claimed the throne today.",
+            f"🎉 The kingdom belongs to {king.mention}!"
+        ]
+
+        await message.channel.send(random.choice(king_messages))
+        return
+
+   # Alliance command
+    if text.startswith("!alliance"):
+        if config is None:
+            return
+
+        parts = message.content.split(maxsplit=1)
+
+        if len(parts) < 2:
+            await message.channel.send(
+                "❌ Usage: `!alliance Your Alliance Name`"
+            )
+            return
+
+        alliance_name = parts[1].strip()
+
+        config["alliance_name"] = alliance_name
+
+        await message.channel.send(
+            f"✅ Alliance name set to **{alliance_name}**!"
+        )
+        return
+
+    # Timezone command
+    if text.startswith("!timezone"):
+        if config is None:
+            return
+
+        parts = message.content.split(maxsplit=1)
+
+        if len(parts) < 2:
+            await message.channel.send(
+                "❌ Usage: `!timezone UTC+5:30`"
+            )
+            return
+
+        timezone = parts[1].strip()
+
+        config["timezone"] = timezone
+
+        await message.channel.send(
+            f"🌍 Timezone set to **{timezone}**!"
+        )
+        return
+
+    await bot.process_commands(message)
+
+
+bot.run(TOKEN)
