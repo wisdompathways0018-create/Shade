@@ -20,97 +20,81 @@ responses = {
         "Mission failed successfully.",
         "Peak performance."
     ],
-
     "lost": [
         "💀 Skill issue detected.",
         "GG... for the other side.",
         "That didn't go as planned."
     ],
-
     "hi": [
         "Hey! 👋",
         "Hello there!",
         "Welcome!"
     ],
-
     "hello": [
         "Hi! 😊",
         "Greetings!",
         "Hey, how's it going?"
     ],
-
     "bye": [
         "See you later! 👋",
         "Take care!",
         "Goodbye!"
     ],
-
     "thanks": [
         "You're welcome! ❤️",
         "Anytime!",
         "Glad to help!"
     ],
-
     "gg": [
         "GG! 🔥",
         "Well played!",
         "Respect."
     ],
-
     "ez": [
         "😂 Sure it was.",
         "Confidence level: 100%.",
         "We'll allow it."
     ],
-
     "win": [
         "Victory! 🏆",
         "Let's gooo! 🔥",
         "Champion vibes!"
     ],
-
     "lose": [
         "You'll get them next time.",
         "Every loss is a lesson.",
         "Keep fighting!"
     ],
-
     "lol": [
         "🤣",
         "LMAO 😂",
         "That was funny!"
     ],
-
     "bot": [
         "Yes? I'm awake. 🤖",
         "At your service!",
         "What's up?"
     ],
-
     "shadow": [
         "Shadow Sovereign has arrived. 🌑",
         "Darkness answers your call.",
         "All hail the Shadow."
     ],
-
     "help": [
         "How can I help?",
         "Type something interesting!",
         "I'm listening."
     ],
-
     "let him cook": [
         "We'll see if it burns. 🔥",
         "Cooking in progress...",
         "Chef mode activated."
     ],
-
     "nah": [
         "Understandable.",
         "Fair enough.",
         "No means no."
     ],
-
     "brb": [
         "I'll be here.",
         "Take your time.",
@@ -126,34 +110,38 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    global last_reply
+
     if message.author.bot:
         return
 
     text = message.content.lower()
 
+    # What's my name
     if "what's my name" in text or "what is my name" in text:
         await message.channel.send(
             f"Your name is **{message.author.display_name}** 😎"
         )
         return
 
+    # Who am I
     if "who am i" in text:
         await message.channel.send(
             f"You're **{message.author.display_name}** 👑"
         )
         return
 
-    global last_reply
+    # Auto replies (30 sec cooldown + 30% chance)
+    for trigger, reply_list in responses.items():
+        if trigger in text:
+            if time.time() - last_reply >= 30:
+                if random.randint(1, 100) <= 30:
+                    await message.channel.send(random.choice(reply_list))
+                    last_reply = time.time()
+            break
 
-for trigger, reply_list in responses.items():
-    if trigger in text:
-        if time.time() - last_reply >= 30:      # 30 second cooldown
-            if random.randint(1, 100) <= 30:    # 30% chance
-                await message.channel.send(random.choice(reply_list))
-                last_reply = time.time()
-        break
-# Rate command
-    if text.startswith("rate ") and len(message.mentions) > 0:
+    # Rate command
+    if text.startswith("rate ") and message.mentions:
         target = message.mentions[0]
 
         score = random.randint(0, 100)
@@ -172,7 +160,7 @@ for trigger, reply_list in responses.items():
         return
 
     # Roast command
-    if text.startswith("roast ") and len(message.mentions) > 0:
+    if text.startswith("roast ") and message.mentions:
         target = message.mentions[0]
 
         roasts = [
@@ -192,8 +180,15 @@ for trigger, reply_list in responses.items():
         return
 
     # King command
-    if "king" in text:
-        members = [member for member in message.guild.members if not member.bot]
+    if text == "king":
+        if message.guild is None:
+            return
+
+        members = [m for m in message.guild.members if not m.bot]
+
+        if not members:
+            await message.channel.send("👑 No members found.")
+            return
 
         king = random.choice(members)
 
@@ -210,5 +205,5 @@ for trigger, reply_list in responses.items():
 
     await bot.process_commands(message)
 
-    
+
 bot.run(TOKEN)
