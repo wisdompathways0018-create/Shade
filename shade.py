@@ -203,26 +203,26 @@ async def on_message(message):
         ]
 
         await message.channel.send(random.choice(king_messages))
-      return
+return
 
-        # Alliance command
-        if text.startswith("!alliance"):
+    # Alliance command
+    if text.startswith("!alliance"):
         if config is None:
+            return
+
+        alliance_name = message.content[10:].strip()
+
+        if alliance_name == "":
+            await message.channel.send("❌ Please enter an alliance name.")
+            return
+
+        config["alliance_name"] = alliance_name
+
+        await message.channel.send(
+            f"✅ Alliance name set to **{alliance_name}**!"
+        )
         return
-
-    alliance_name = message.content[10:].strip()
-
-    if alliance_name == "":
-        await message.channel.send("❌ Please enter an alliance name.")
-        return
-
-    config["alliance_name"] = alliance_name
-
-    await message.channel.send(
-        f"✅ Alliance name set to **{alliance_name}**!"
-    )
-    return
-
+        
     await bot.process_commands(message)
 
 
