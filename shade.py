@@ -143,10 +143,15 @@ async def on_message(message):
         )
         return
 
-    for trigger, reply_list in responses.items():
-        if trigger in text:
-            await message.channel.send(random.choice(reply_list))
-            break
+    global last_reply
+
+for trigger, reply_list in responses.items():
+    if trigger in text:
+        if time.time() - last_reply >= 30:      # 30 second cooldown
+            if random.randint(1, 100) <= 30:    # 30% chance
+                await message.channel.send(random.choice(reply_list))
+                last_reply = time.time()
+        break
 # Rate command
     if text.startswith("rate ") and len(message.mentions) > 0:
         target = message.mentions[0]
