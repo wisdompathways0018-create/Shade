@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-from config import get_server
+from config import get_server, save_server
 
 TOKEN = os.getenv("TOKEN")
 
@@ -223,6 +223,7 @@ async def alliance(
     config = get_server(interaction.guild.id)
 
     config["alliance_name"] = name
+    save_server()
 
     await interaction.response.send_message(
         f"✅ Alliance set to **{name}**"
@@ -251,6 +252,7 @@ async def timezone(
     config = get_server(interaction.guild.id)
 
     config["timezone"] = timezone
+    save_server()
 
     await interaction.response.send_message(
         f"🌍 Timezone updated to **{timezone}**"
@@ -279,6 +281,7 @@ async def pingrole(
     config = get_server(interaction.guild.id)
 
     config["ping_role"] = role.id
+    save_server()
 
     await interaction.response.send_message(
         f"✅ Ping role set to {role.mention}"
@@ -307,6 +310,7 @@ async def eventchannel(
     config = get_server(interaction.guild.id)
 
     config["reminder_channel"] = channel.id
+    save_server()
 
     await interaction.response.send_message(
         f"✅ Reminder channel set to {channel.mention}"
