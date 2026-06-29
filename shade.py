@@ -164,7 +164,24 @@ async def on_message(message):
         await message.channel.send(random.choice(roasts))
         return
 
+    # King command
+    if text == "king":
+        members = [member for member in message.guild.members if not member.bot]
+
+        king = random.choice(members)
+
+        king_messages = [
+            f"👑 Today's King is... {king.mention}! Long live the King!",
+            f"🏆 The crown chooses {king.mention} today!",
+            f"⚔️ All hail {king.mention}, ruler of the server!",
+            f"👑 {king.mention} has claimed the throne today.",
+            f"🎉 The kingdom belongs to {king.mention}!"
+        ]
+
+        await message.channel.send(random.choice(king_messages))
+        return
+
     await bot.process_commands(message)
 
-
+    
 bot.run(TOKEN)
