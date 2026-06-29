@@ -14,7 +14,7 @@ class Frost(app_commands.Group):
 
     @app_commands.command(
         name="create",
-        description="Create a Frost reminder"
+        description="Create a Frost event"
     )
     @app_commands.describe(
         city="Frost city",
@@ -71,9 +71,9 @@ class Frost(app_commands.Group):
 
         frost = config.get("frost", [])
 
-        if len(frost) == 0:
+        if not frost:
             await interaction.response.send_message(
-                "❄ No Frost events have been created."
+                "❄ No Frost events found."
             )
             return
 
@@ -93,6 +93,7 @@ class Frost(app_commands.Group):
         await interaction.response.send_message(
             embed=embed
         )
+
     @app_commands.command(
         name="delete",
         description="Delete a Frost event"
@@ -128,10 +129,8 @@ class Frost(app_commands.Group):
         save_server()
 
         await interaction.response.send_message(
-            f"🗑 Deleted Frost event **{removed['city']}** ({removed['time']})"
+            f"🗑 Deleted **{removed['city']}** ({removed['time']})"
         )
-
-
     @app_commands.command(
         name="clear",
         description="Delete all Frost events"
@@ -157,6 +156,8 @@ class Frost(app_commands.Group):
         await interaction.response.send_message(
             "🧹 All Frost events have been deleted."
         )
+
+
     @app_commands.command(
         name="edit",
         description="Edit a Frost event"
