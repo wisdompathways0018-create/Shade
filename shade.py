@@ -3,6 +3,7 @@ import random
 import time
 import discord
 from discord.ext import commands
+from config import get_server
 
 TOKEN = os.getenv("TOKEN")
 
