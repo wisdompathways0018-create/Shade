@@ -11,7 +11,8 @@ class IBJoinView(discord.ui.View):
 
     @discord.ui.button(
         label="✅ Join IB",
-        style=discord.ButtonStyle.green
+        style=discord.ButtonStyle.green,
+        custom_id="ib_join"
     )
     async def join(
         self,
@@ -26,7 +27,8 @@ class IBJoinView(discord.ui.View):
 
     @discord.ui.button(
         label="❌ Leave IB",
-        style=discord.ButtonStyle.red
+        style=discord.ButtonStyle.red,
+        custom_id="ib_leave"
     )
     async def leave(
         self,
@@ -268,4 +270,8 @@ class IB(app_commands.Group):
 
 def setup(bot):
     bot.add_view(IBJoinView())
-    bot.tree.add_command(IB())
+
+    try:
+        bot.tree.add_command(IB())
+    except Exception:
+        pass
