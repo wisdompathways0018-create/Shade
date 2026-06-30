@@ -40,7 +40,6 @@ class ReminderEngine:
             config = get_server(guild.id)
 
             channel_id = config.get("reminder_channel")
-            role_id = config.get("ping_role")
 
             if not channel_id:
                 continue
@@ -50,7 +49,10 @@ class ReminderEngine:
             if channel is None:
                 continue
 
-            role = guild.get_role(role_id) if role_id else None
+            role = discord.utils.get(
+                guild.roles,
+                name="Frost"
+            )
 
             for event in config.get("frost", []):
 
@@ -68,6 +70,7 @@ class ReminderEngine:
                     event["date"],
                     event["time"]
                 )
+
                 if key in self.sent:
                     continue
 
