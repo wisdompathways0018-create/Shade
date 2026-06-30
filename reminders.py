@@ -99,9 +99,8 @@ class ReminderEngine:
 
 
 def setup(bot):
-
     engine = ReminderEngine(bot)
 
-    bot.loop.create_task(
-        engine.start()
-    )
+    @bot.event
+    async def on_ready():
+        bot.loop.create_task(engine.start())
