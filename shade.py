@@ -410,9 +410,11 @@ async def on_app_command_error(
 
 import events
 import reminders
+import roles
 
 events.setup(bot)
 reminders.setup(bot)
+roles.setup(bot)
 
 
 # ==========================================
