@@ -32,6 +32,9 @@ class ReminderEngine:
         today = datetime.now().strftime("%Y-%m-%d")
         now = datetime.now().strftime("%H:%M")
 
+        print(f"Today: {today}")
+        print(f"Now: {now}")
+
         for guild in self.bot.guilds:
 
             config = get_server(guild.id)
@@ -50,6 +53,8 @@ class ReminderEngine:
             role = guild.get_role(role_id) if role_id else None
 
             for event in config.get("frost", []):
+
+                print(event)
 
                 if event["date"] != today:
                     continue
