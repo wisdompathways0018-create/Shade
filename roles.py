@@ -140,4 +140,5 @@ class RoleCommands(app_commands.Group):
 
 
 def setup(bot):
+    bot.add_view(RoleView())
     bot.tree.add_command(RoleCommands())
