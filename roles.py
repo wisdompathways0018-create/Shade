@@ -140,5 +140,7 @@ class RoleCommands(app_commands.Group):
 
 
 def setup(bot):
+    print("Loading roles.py...")
     bot.add_view(RoleView())
     bot.tree.add_command(RoleCommands())
+    print("Roles command registered!")
