@@ -409,10 +409,11 @@ async def on_app_command_error(
         print(e)
 
 import events
-import reminders
 
 events.setup(bot)
-reminders.setup(bot)
+
+# import reminders
+# reminders.setup(bot)
 
 
 # ==========================================
