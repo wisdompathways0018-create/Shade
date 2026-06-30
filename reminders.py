@@ -15,6 +15,7 @@ class ReminderEngine:
     async def start(self):
 
         await self.bot.wait_until_ready()
+        print("✅ Reminder engine started")
 
         while not self.bot.is_closed():
 
