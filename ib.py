@@ -45,7 +45,8 @@ class IB(app_commands.Group):
             {
                 "date": date,
                 "time": time,
-                "notes": notes
+                "notes": notes,
+                "attendees": []
             }
         )
 
@@ -91,12 +92,15 @@ class IB(app_commands.Group):
 
         for index, event in enumerate(events, start=1):
 
+            attendees = len(event.get("attendees", []))
+
             embed.add_field(
                 name=f"{index}. IB Event",
                 value=(
                     f"📅 {event['date']}\n"
                     f"🕒 {event['time']}\n"
-                    f"📝 {event['notes']}"
+                    f"📝 {event['notes']}\n"
+                    f"👥 Attendees: **{attendees}**"
                 ),
                 inline=False
             )
@@ -206,9 +210,14 @@ class IB(app_commands.Group):
             )
             return
 
-        events[number - 1]["date"] = date
-        events[number - 1]["time"] = time
-        events[number - 1]["notes"] = notes
+        event = events[number - 1]
+
+        event["date"] = date
+        event["time"] = time
+        event["notes"] = notes
+
+        if "attendees" not in event:
+            event["attendees"] = []
 
         save_server()
 
