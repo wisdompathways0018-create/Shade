@@ -18,18 +18,20 @@ class Frost(app_commands.Group):
     )
     @app_commands.describe(
         city="Frost city",
-        time="Example: 20:00"
+        date="YYYY-MM-DD",
+        time="HH:MM"
     )
     async def create(
         self,
         interaction: discord.Interaction,
         city: str,
+        date: str,
         time: str
     ):
 
         if interaction.guild is None:
             await interaction.response.send_message(
-                "❌ This command can only be used in a server.",
+                "❌ Server only.",
                 ephemeral=True
             )
             return
@@ -39,6 +41,7 @@ class Frost(app_commands.Group):
         config["frost"].append(
             {
                 "city": city,
+                "date": date,
                 "time": time
             }
         )
@@ -48,8 +51,10 @@ class Frost(app_commands.Group):
         await interaction.response.send_message(
             f"✅ Frost event created!\n"
             f"❄ City: **{city}**\n"
+            f"📅 Date: **{date}**\n"
             f"🕒 Time: **{time}**"
         )
+
 
     @app_commands.command(
         name="list",
@@ -62,7 +67,7 @@ class Frost(app_commands.Group):
 
         if interaction.guild is None:
             await interaction.response.send_message(
-                "❌ This command can only be used in a server.",
+                "❌ Server only.",
                 ephemeral=True
             )
             return
@@ -86,7 +91,10 @@ class Frost(app_commands.Group):
 
             embed.add_field(
                 name=f"{index}. {event['city']}",
-                value=f"🕒 {event['time']}",
+                value=(
+                    f"📅 {event['date']}\n"
+                    f"🕒 {event['time']}"
+                ),
                 inline=False
             )
 
@@ -109,7 +117,7 @@ class Frost(app_commands.Group):
 
         if interaction.guild is None:
             await interaction.response.send_message(
-                "❌ This command can only be used in a server.",
+                "❌ Server only.",
                 ephemeral=True
             )
             return
@@ -129,8 +137,11 @@ class Frost(app_commands.Group):
         save_server()
 
         await interaction.response.send_message(
-            f"🗑 Deleted **{removed['city']}** ({removed['time']})"
+            f"🗑 Deleted Frost event **{removed['city']}** "
+            f"({removed['date']} {removed['time']})"
         )
+
+
     @app_commands.command(
         name="clear",
         description="Delete all Frost events"
@@ -142,7 +153,7 @@ class Frost(app_commands.Group):
 
         if interaction.guild is None:
             await interaction.response.send_message(
-                "❌ This command can only be used in a server.",
+                "❌ Server only.",
                 ephemeral=True
             )
             return
@@ -164,20 +175,22 @@ class Frost(app_commands.Group):
     )
     @app_commands.describe(
         number="Event number from /frost list",
-        city="New city name",
-        time="New time (Example: 20:00)"
+        city="New city",
+        date="YYYY-MM-DD",
+        time="HH:MM"
     )
     async def edit(
         self,
         interaction: discord.Interaction,
         number: int,
         city: str,
+        date: str,
         time: str
     ):
 
         if interaction.guild is None:
             await interaction.response.send_message(
-                "❌ This command can only be used in a server.",
+                "❌ Server only.",
                 ephemeral=True
             )
             return
@@ -193,13 +206,15 @@ class Frost(app_commands.Group):
             return
 
         frost[number - 1]["city"] = city
+        frost[number - 1]["date"] = date
         frost[number - 1]["time"] = time
 
         save_server()
 
         await interaction.response.send_message(
-            f"✏️ Frost event #{number} updated.\n"
+            f"✏️ Frost event #{number} updated!\n"
             f"❄ City: **{city}**\n"
+            f"📅 Date: **{date}**\n"
             f"🕒 Time: **{time}**"
         )
 
