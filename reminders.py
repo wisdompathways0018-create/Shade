@@ -108,7 +108,7 @@ def setup(bot):
     engine = ReminderEngine(bot)
 
     @bot.listen()
-async def on_ready():
-    if not hasattr(bot, "_reminder_started"):
-        bot._reminder_started = True
-        asyncio.create_task(engine.start())
+    async def on_ready():
+        if not hasattr(bot, "_reminder_started"):
+            bot._reminder_started = True
+            asyncio.create_task(engine.start())
