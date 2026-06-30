@@ -4,6 +4,7 @@ from datetime import datetime
 import discord
 
 from config import get_server
+from ib import IBJoinView
 
 
 class ReminderEngine:
@@ -21,6 +22,7 @@ class ReminderEngine:
 
             try:
                 await self.check_frost()
+                await self.check_ib()
 
             except Exception as e:
                 print(f"[Reminder Error] {e}")
@@ -56,8 +58,6 @@ class ReminderEngine:
 
             for event in config.get("frost", []):
 
-                print(event)
-
                 if event["date"] != today:
                     continue
 
@@ -66,6 +66,7 @@ class ReminderEngine:
 
                 key = (
                     guild.id,
+                    "Frost",
                     event["city"],
                     event["date"],
                     event["time"]
@@ -104,6 +105,81 @@ class ReminderEngine:
                 await channel.send(
                     content=mention,
                     embed=embed
+                )
+
+    async def check_ib(self):
+
+        today = datetime.now().strftime("%Y-%m-%d")
+        now = datetime.now().strftime("%H:%M")
+
+        for guild in self.bot.guilds:
+
+            config = get_server(guild.id)
+
+            channel_id = config.get("reminder_channel")
+
+            if not channel_id:
+                continue
+
+            channel = guild.get_channel(channel_id)
+
+            if channel is None:
+                continue
+
+            role = discord.utils.get(
+                guild.roles,
+                name="IB"
+            )
+
+            for event in config.get("ib", []):
+
+                if event["date"] != today:
+                    continue
+
+                if event["time"] != now:
+                    continue
+
+                key = (
+                    guild.id,
+                    "IB",
+                    event["date"],
+                    event["time"]
+                )
+
+                if key in self.sent:
+                    continue
+
+                self.sent.add(key)
+
+                mention = role.mention if role else "@everyone"
+
+                embed = discord.Embed(
+                    title="🏰 IB Reminder",
+                    color=discord.Color.green()
+                )
+
+                embed.add_field(
+                    name="Date",
+                    value=event["date"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="Time",
+                    value=event["time"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="Notes",
+                    value=event["notes"],
+                    inline=False
+                )
+
+                await channel.send(
+                    content=mention,
+                    embed=embed,
+                    view=IBJoinView()
                 )
 
 
