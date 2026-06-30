@@ -4,6 +4,43 @@ from discord import app_commands
 from config import get_server, save_server
 
 
+class IBJoinView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="✅ Join IB",
+        style=discord.ButtonStyle.green
+    )
+    async def join(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button
+    ):
+
+        await interaction.response.send_message(
+            "Joining will be enabled in the next step.",
+            ephemeral=True
+        )
+
+    @discord.ui.button(
+        label="❌ Leave IB",
+        style=discord.ButtonStyle.red
+    )
+    async def leave(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button
+    ):
+
+        await interaction.response.send_message(
+            "Leaving will be enabled in the next step.",
+            ephemeral=True
+        )
+
+
+
 class IB(app_commands.Group):
 
     def __init__(self):
@@ -230,4 +267,5 @@ class IB(app_commands.Group):
 
 
 def setup(bot):
+    bot.add_view(IBJoinView())
     bot.tree.add_command(IB())
