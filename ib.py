@@ -20,8 +20,51 @@ class IBJoinView(discord.ui.View):
         button: discord.ui.Button
     ):
 
+        if interaction.guild is None:
+            return
+
+        config = get_server(interaction.guild.id)
+
+        for event in config.get("ib", []):
+
+            if event.get("message_id") != interaction.message.id:
+                continue
+
+            attendees = event.setdefault("attendees", [])
+
+            if interaction.user.id in attendees:
+
+                await interaction.response.send_message(
+                    "✅ You have already joined this IB event.",
+                    ephemeral=True
+                )
+                return
+
+            attendees.append(interaction.user.id)
+            save_server()
+
+            embed = interaction.message.embeds[0].copy()
+
+            embed.set_field_at(
+                index=3,
+                name="👥 Joined",
+                value=str(len(attendees)),
+                inline=False
+            )
+
+            await interaction.message.edit(
+                embed=embed,
+                view=self
+            )
+
+            await interaction.response.send_message(
+                "✅ You joined this IB event.",
+                ephemeral=True
+            )
+            return
+
         await interaction.response.send_message(
-            "Joining will be enabled in the next step.",
+            "❌ Event not found.",
             ephemeral=True
         )
 
@@ -36,8 +79,51 @@ class IBJoinView(discord.ui.View):
         button: discord.ui.Button
     ):
 
+        if interaction.guild is None:
+            return
+
+        config = get_server(interaction.guild.id)
+
+        for event in config.get("ib", []):
+
+            if event.get("message_id") != interaction.message.id:
+                continue
+
+            attendees = event.setdefault("attendees", [])
+
+            if interaction.user.id not in attendees:
+
+                await interaction.response.send_message(
+                    "❌ You haven't joined this IB event.",
+                    ephemeral=True
+                )
+                return
+
+            attendees.remove(interaction.user.id)
+            save_server()
+
+            embed = interaction.message.embeds[0].copy()
+
+            embed.set_field_at(
+                index=3,
+                name="👥 Joined",
+                value=str(len(attendees)),
+                inline=False
+            )
+
+            await interaction.message.edit(
+                embed=embed,
+                view=self
+            )
+
+            await interaction.response.send_message(
+                "✅ You left this IB event.",
+                ephemeral=True
+            )
+            return
+
         await interaction.response.send_message(
-            "Leaving will be enabled in the next step.",
+            "❌ Event not found.",
             ephemeral=True
         )
 
@@ -49,7 +135,6 @@ class IB(app_commands.Group):
             name="ib",
             description="IB event commands"
         )
-
     @app_commands.command(
         name="create",
         description="Create an IB event"
@@ -79,15 +164,15 @@ class IB(app_commands.Group):
         if "ib" not in config:
             config["ib"] = []
 
-        config["ib"].append(
-            {
-                "date": date,
-                "time": time,
-                "notes": notes,
-                "attendees": []
-            }
-        )
+        event = {
+            "date": date,
+            "time": time,
+            "notes": notes,
+            "attendees": [],
+            "message_id": None
+        }
 
+        config["ib"].append(event)
         save_server()
 
         channel_id = config.get("reminder_channel")
@@ -134,17 +219,19 @@ class IB(app_commands.Group):
                     inline=False
                 )
 
-                await channel.send(
+                message = await channel.send(
                     content=mention,
                     embed=embed,
                     view=IBJoinView()
                 )
 
+                event["message_id"] = message.id
+                save_server()
+
         await interaction.response.send_message(
-            "✅ IB event created and posted successfully.",
+            "✅ IB event created successfully.",
             ephemeral=True
         )
-
 
     @app_commands.command(
         name="list",
@@ -167,6 +254,7 @@ class IB(app_commands.Group):
         events = config.get("ib", [])
 
         if not events:
+
             await interaction.response.send_message(
                 "🏰 No IB events found."
             )
@@ -195,71 +283,6 @@ class IB(app_commands.Group):
         await interaction.response.send_message(
             embed=embed
         )
-
-    @app_commands.command(
-        name="delete",
-        description="Delete an IB event"
-    )
-    @app_commands.describe(
-        number="Event number from /ib list"
-    )
-    async def delete(
-        self,
-        interaction: discord.Interaction,
-        number: int
-    ):
-
-        if interaction.guild is None:
-            await interaction.response.send_message(
-                "❌ Server only.",
-                ephemeral=True
-            )
-            return
-
-        config = get_server(interaction.guild.id)
-
-        events = config.get("ib", [])
-
-        if number < 1 or number > len(events):
-            await interaction.response.send_message(
-                "❌ Invalid event number."
-            )
-            return
-
-        removed = events.pop(number - 1)
-
-        save_server()
-
-        await interaction.response.send_message(
-            f"🗑 Deleted IB event "
-            f"({removed['date']} {removed['time']})"
-        )
-
-    @app_commands.command(
-        name="clear",
-        description="Delete all IB events"
-    )
-    async def clear(
-        self,
-        interaction: discord.Interaction
-    ):
-
-        if interaction.guild is None:
-            await interaction.response.send_message(
-                "❌ Server only.",
-                ephemeral=True
-            )
-            return
-
-        config = get_server(interaction.guild.id)
-
-        config["ib"] = []
-
-        save_server()
-
-        await interaction.response.send_message(
-            "🧹 All IB events have been deleted."
-        )
     @app_commands.command(
         name="edit",
         description="Edit an IB event"
@@ -287,7 +310,6 @@ class IB(app_commands.Group):
             return
 
         config = get_server(interaction.guild.id)
-
         events = config.get("ib", [])
 
         if number < 1 or number > len(events):
@@ -303,8 +325,8 @@ class IB(app_commands.Group):
         event["time"] = time
         event["notes"] = notes
 
-        if "attendees" not in event:
-            event["attendees"] = []
+        event.setdefault("attendees", [])
+        event.setdefault("message_id", None)
 
         save_server()
 
@@ -313,6 +335,70 @@ class IB(app_commands.Group):
             f"📅 Date: **{date}**\n"
             f"🕒 Time: **{time}**\n"
             f"📝 Notes: **{notes}**"
+        )
+
+    @app_commands.command(
+        name="delete",
+        description="Delete an IB event"
+    )
+    @app_commands.describe(
+        number="Event number from /ib list"
+    )
+    async def delete(
+        self,
+        interaction: discord.Interaction,
+        number: int
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ Server only.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+        events = config.get("ib", [])
+
+        if number < 1 or number > len(events):
+            await interaction.response.send_message(
+                "❌ Invalid event number.",
+                ephemeral=True
+            )
+            return
+
+        removed = events.pop(number - 1)
+
+        save_server()
+
+        await interaction.response.send_message(
+            f"🗑 Deleted IB event ({removed['date']} {removed['time']})"
+        )
+
+    @app_commands.command(
+        name="clear",
+        description="Delete all IB events"
+    )
+    async def clear(
+        self,
+        interaction: discord.Interaction
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ Server only.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+
+        config["ib"] = []
+
+        save_server()
+
+        await interaction.response.send_message(
+            "🧹 All IB events have been deleted."
         )
 
 
