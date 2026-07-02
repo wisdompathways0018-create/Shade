@@ -42,7 +42,6 @@ class IBJoinView(discord.ui.View):
         )
 
 
-
 class IB(app_commands.Group):
 
     def __init__(self):
@@ -91,12 +90,61 @@ class IB(app_commands.Group):
 
         save_server()
 
+        channel_id = config.get("reminder_channel")
+
+        if channel_id:
+
+            channel = interaction.guild.get_channel(channel_id)
+
+            if channel:
+
+                role = discord.utils.get(
+                    interaction.guild.roles,
+                    name="IB"
+                )
+
+                mention = role.mention if role else "@everyone"
+
+                embed = discord.Embed(
+                    title="🏰 IB Event",
+                    color=discord.Color.green()
+                )
+
+                embed.add_field(
+                    name="📅 Date",
+                    value=date,
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="🕒 Time",
+                    value=time,
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📝 Notes",
+                    value=notes,
+                    inline=False
+                )
+
+                embed.add_field(
+                    name="👥 Joined",
+                    value="0",
+                    inline=False
+                )
+
+                await channel.send(
+                    content=mention,
+                    embed=embed,
+                    view=IBJoinView()
+                )
+
         await interaction.response.send_message(
-            f"✅ IB event created!\n"
-            f"📅 Date: **{date}**\n"
-            f"🕒 Time: **{time}**\n"
-            f"📝 Notes: **{notes}**"
+            "✅ IB event created and posted successfully.",
+            ephemeral=True
         )
+
 
     @app_commands.command(
         name="list",
@@ -212,7 +260,6 @@ class IB(app_commands.Group):
         await interaction.response.send_message(
             "🧹 All IB events have been deleted."
         )
-
     @app_commands.command(
         name="edit",
         description="Edit an IB event"
@@ -245,7 +292,8 @@ class IB(app_commands.Group):
 
         if number < 1 or number > len(events):
             await interaction.response.send_message(
-                "❌ Invalid event number."
+                "❌ Invalid event number.",
+                ephemeral=True
             )
             return
 
@@ -269,6 +317,7 @@ class IB(app_commands.Group):
 
 
 def setup(bot):
+
     bot.add_view(IBJoinView())
 
     try:
