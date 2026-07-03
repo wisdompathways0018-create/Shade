@@ -341,11 +341,13 @@ import events
 import reminders
 import roles
 import ib
+import ke
 
 events.setup(bot)
 reminders.setup(bot)
 roles.setup(bot)
 ib.setup(bot)
+ke.setup(bot)
 
 
 # ==========================================
