@@ -59,16 +59,56 @@ class Frost(app_commands.Group):
 
         save_server()
 
-        await interaction.response.send_message(
-            f"✅ Frost event created!\n"
-            f"❄ City: **{city}**\n"
-            f"📅 Date: **{date}**\n"
-            f"🕒 Time: **{time}**"
-        )
+        channel_id = config.get("reminder_channel")
 
+        if channel_id:
+
+            channel = interaction.guild.get_channel(channel_id)
+
+            if channel:
+
+                role = discord.utils.get(
+                    interaction.guild.roles,
+                    name="Frost"
+                )
+
+                mention = role.mention if role else "@everyone"
+
+                embed = discord.Embed(
+                    title="❄️ Frost Event",
+                    color=discord.Color.blue()
+                )
+
+                embed.add_field(
+                    name="🏰 City",
+                    value=city,
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📅 Date",
+                    value=date,
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="🕒 Time",
+                    value=time,
+                    inline=True
+                )
+
+                await channel.send(
+                    content=mention,
+                    embed=embed
+                )
+
+        await interaction.response.send_message(
+            "✅ Frost event created successfully.",
+            ephemeral=True
+        )
     @app_commands.command(
-        name="list",
-        description="List all Frost events"
+            name="list",
+            description="List all Frost events"
     )
     async def list(
         self,
@@ -118,9 +158,10 @@ class Frost(app_commands.Group):
         await interaction.response.send_message(
             embed=embed
         )
+
     @app_commands.command(
-            name="edit",
-            description="Edit a Frost event"
+        name="edit",
+        description="Edit a Frost event"
     )
     @app_commands.describe(
         number="Event number from /frost list",
@@ -156,6 +197,7 @@ class Frost(app_commands.Group):
         frost = config.get("frost", [])
 
         if number < 1 or number > len(frost):
+
             await interaction.response.send_message(
                 "❌ Invalid event number.",
                 ephemeral=True
@@ -174,10 +216,9 @@ class Frost(app_commands.Group):
             f"📅 Date: **{date}**\n"
             f"🕒 Time: **{time}**"
         )
-
     @app_commands.command(
-        name="delete",
-        description="Delete a Frost event"
+            name="delete",
+            description="Delete a Frost event"
     )
     @app_commands.describe(
         number="Event number from /frost list"
@@ -207,6 +248,7 @@ class Frost(app_commands.Group):
         frost = config.get("frost", [])
 
         if number < 1 or number > len(frost):
+
             await interaction.response.send_message(
                 "❌ Invalid event number.",
                 ephemeral=True
@@ -221,9 +263,10 @@ class Frost(app_commands.Group):
             f"🗑 Deleted Frost event **{removed['city']}** "
             f"({removed['date']} {removed['time']})"
         )
+
     @app_commands.command(
-            name="clear",
-            description="Delete all Frost events"
+        name="clear",
+        description="Delete all Frost events"
     )
     async def clear(
         self,
