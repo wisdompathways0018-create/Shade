@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 
 from config import get_server, save_server
+from permissions import is_leadership
 
 
 class Frost(app_commands.Group):
@@ -36,7 +37,17 @@ class Frost(app_commands.Group):
             )
             return
 
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
         config = get_server(interaction.guild.id)
+
+        if "frost" not in config:
+            config["frost"] = []
 
         config["frost"].append(
             {
@@ -55,7 +66,6 @@ class Frost(app_commands.Group):
             f"🕒 Time: **{time}**"
         )
 
-
     @app_commands.command(
         name="list",
         description="List all Frost events"
@@ -68,6 +78,13 @@ class Frost(app_commands.Group):
         if interaction.guild is None:
             await interaction.response.send_message(
                 "❌ Server only.",
+                ephemeral=True
+            )
+            return
+
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
                 ephemeral=True
             )
             return
@@ -101,77 +118,9 @@ class Frost(app_commands.Group):
         await interaction.response.send_message(
             embed=embed
         )
-
     @app_commands.command(
-        name="delete",
-        description="Delete a Frost event"
-    )
-    @app_commands.describe(
-        number="Event number from /frost list"
-    )
-    async def delete(
-        self,
-        interaction: discord.Interaction,
-        number: int
-    ):
-
-        if interaction.guild is None:
-            await interaction.response.send_message(
-                "❌ Server only.",
-                ephemeral=True
-            )
-            return
-
-        config = get_server(interaction.guild.id)
-
-        frost = config.get("frost", [])
-
-        if number < 1 or number > len(frost):
-            await interaction.response.send_message(
-                "❌ Invalid event number."
-            )
-            return
-
-        removed = frost.pop(number - 1)
-
-        save_server()
-
-        await interaction.response.send_message(
-            f"🗑 Deleted Frost event **{removed['city']}** "
-            f"({removed['date']} {removed['time']})"
-        )
-
-
-    @app_commands.command(
-        name="clear",
-        description="Delete all Frost events"
-    )
-    async def clear(
-        self,
-        interaction: discord.Interaction
-    ):
-
-        if interaction.guild is None:
-            await interaction.response.send_message(
-                "❌ Server only.",
-                ephemeral=True
-            )
-            return
-
-        config = get_server(interaction.guild.id)
-
-        config["frost"] = []
-
-        save_server()
-
-        await interaction.response.send_message(
-            "🧹 All Frost events have been deleted."
-        )
-
-
-    @app_commands.command(
-        name="edit",
-        description="Edit a Frost event"
+            name="edit",
+            description="Edit a Frost event"
     )
     @app_commands.describe(
         number="Event number from /frost list",
@@ -195,13 +144,21 @@ class Frost(app_commands.Group):
             )
             return
 
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
         config = get_server(interaction.guild.id)
 
         frost = config.get("frost", [])
 
         if number < 1 or number > len(frost):
             await interaction.response.send_message(
-                "❌ Invalid event number."
+                "❌ Invalid event number.",
+                ephemeral=True
             )
             return
 
@@ -218,6 +175,89 @@ class Frost(app_commands.Group):
             f"🕒 Time: **{time}**"
         )
 
+    @app_commands.command(
+        name="delete",
+        description="Delete a Frost event"
+    )
+    @app_commands.describe(
+        number="Event number from /frost list"
+    )
+    async def delete(
+        self,
+        interaction: discord.Interaction,
+        number: int
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ Server only.",
+                ephemeral=True
+            )
+            return
+
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+
+        frost = config.get("frost", [])
+
+        if number < 1 or number > len(frost):
+            await interaction.response.send_message(
+                "❌ Invalid event number.",
+                ephemeral=True
+            )
+            return
+
+        removed = frost.pop(number - 1)
+
+        save_server()
+
+        await interaction.response.send_message(
+            f"🗑 Deleted Frost event **{removed['city']}** "
+            f"({removed['date']} {removed['time']})"
+        )
+    @app_commands.command(
+            name="clear",
+            description="Delete all Frost events"
+    )
+    async def clear(
+        self,
+        interaction: discord.Interaction
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ Server only.",
+                ephemeral=True
+            )
+            return
+
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+
+        config["frost"] = []
+
+        save_server()
+
+        await interaction.response.send_message(
+            "🧹 All Frost events have been deleted."
+        )
+
 
 def setup(bot):
-    bot.tree.add_command(Frost())
+
+    try:
+        bot.tree.add_command(Frost())
+    except Exception:
+        pass
