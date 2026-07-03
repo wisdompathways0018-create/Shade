@@ -59,16 +59,56 @@ class KE(app_commands.Group):
 
         save_server()
 
-        await interaction.response.send_message(
-            f"⚔️ Kill Event created!\n"
-            f"📅 Start: **{start_date}**\n"
-            f"📅 End: **{end_date}**\n"
-            f"📝 Notes: **{notes}**"
-        )
+        channel_id = config.get("reminder_channel")
 
+        if channel_id:
+
+            channel = interaction.guild.get_channel(channel_id)
+
+            if channel:
+
+                role = discord.utils.get(
+                    interaction.guild.roles,
+                    name="KE"
+                )
+
+                mention = role.mention if role else "@everyone"
+
+                embed = discord.Embed(
+                    title="⚔️ Kill Event",
+                    color=discord.Color.red()
+                )
+
+                embed.add_field(
+                    name="📅 Start Date",
+                    value=start_date,
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📅 End Date",
+                    value=end_date,
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📝 Notes",
+                    value=notes,
+                    inline=False
+                )
+
+                await channel.send(
+                    content=mention,
+                    embed=embed
+                )
+
+        await interaction.response.send_message(
+            "✅ Kill Event created successfully.",
+            ephemeral=True
+        )
     @app_commands.command(
-        name="list",
-        description="List all Kill Events"
+            name="list",
+            description="List all Kill Events"
     )
     async def list(
         self,
@@ -211,6 +251,7 @@ class KE(app_commands.Group):
         events = config.get("ke", [])
 
         if number < 1 or number > len(events):
+
             await interaction.response.send_message(
                 "❌ Invalid event number.",
                 ephemeral=True
