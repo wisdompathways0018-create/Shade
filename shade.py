@@ -1,6 +1,5 @@
 import os
 import random
-import time
 
 import discord
 from discord.ext import commands
@@ -20,47 +19,6 @@ bot = commands.Bot(
     intents=intents
 )
 
-last_reply = 0
-
-responses = {
-    "hi": [
-        "Hey! 👋",
-        "Hello there!",
-        "Welcome!"
-    ],
-
-    "hello": [
-        "Hi! 😊",
-        "Greetings!"
-    ],
-
-    "gg": [
-        "GG! 🔥",
-        "Well played!"
-    ],
-
-    "thanks": [
-        "You're welcome! ❤️",
-        "Anytime!"
-    ],
-
-    "lol": [
-        "🤣",
-        "😂"
-    ],
-
-    "shadow": [
-        "🌑 Shadow Sovereign has arrived.",
-        "Darkness answers your call."
-    ],
-
-    "oops": [
-        "Mission failed successfully 😂",
-        "Peak performance."
-    ]
-}
-
-
 @bot.event
 async def on_ready():
 
@@ -71,35 +29,6 @@ async def on_ready():
         print(f"❌ Failed to sync commands: {e}")
 
     print(f"🤖 Logged in as {bot.user}")
-
-
-@bot.event
-async def on_message(message):
-
-    global last_reply
-
-    if message.author.bot:
-        return
-
-    text = message.content.lower()
-
-    for trigger, reply_list in responses.items():
-
-        if trigger in text:
-
-            if time.time() - last_reply >= 30:
-
-                if random.randint(1, 100) <= 30:
-
-                    await message.channel.send(
-                        random.choice(reply_list)
-                    )
-
-                    last_reply = time.time()
-
-            break
-
-    await bot.process_commands(message)
 
 # ==========================================
 # Fun Slash Commands
