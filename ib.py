@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 
 from config import get_server, save_server
+from permissions import is_leadership
 
 
 class IBJoinView(discord.ui.View):
@@ -200,6 +201,13 @@ class IB(app_commands.Group):
             )
             return
 
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
         config = get_server(interaction.guild.id)
 
         if "ib" not in config:
@@ -296,6 +304,13 @@ class IB(app_commands.Group):
             )
             return
 
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
         config = get_server(interaction.guild.id)
 
         events = config.get("ib", [])
@@ -357,6 +372,13 @@ class IB(app_commands.Group):
             )
             return
 
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
         config = get_server(interaction.guild.id)
 
         events = config.get("ib", [])
@@ -407,6 +429,13 @@ class IB(app_commands.Group):
             )
             return
 
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
+                ephemeral=True
+            )
+            return
+
         config = get_server(interaction.guild.id)
 
         events = config.get("ib", [])
@@ -439,6 +468,13 @@ class IB(app_commands.Group):
         if interaction.guild is None:
             await interaction.response.send_message(
                 "❌ Server only.",
+                ephemeral=True
+            )
+            return
+
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
                 ephemeral=True
             )
             return
@@ -481,6 +517,13 @@ class IB(app_commands.Group):
 
             await interaction.response.send_message(
                 "❌ Invalid event number.",
+                ephemeral=True
+            )
+            return
+
+        if not is_leadership(interaction.user):
+            await interaction.response.send_message(
+                "❌ Only R5/R6 can use this command.",
                 ephemeral=True
             )
             return
