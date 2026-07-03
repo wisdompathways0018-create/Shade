@@ -33,7 +33,6 @@ class IBJoinView(discord.ui.View):
             attendees = event.setdefault("attendees", [])
 
             if interaction.user.id in attendees:
-
                 await interaction.response.send_message(
                     "✅ You have already joined this IB event.",
                     ephemeral=True
@@ -43,12 +42,33 @@ class IBJoinView(discord.ui.View):
             attendees.append(interaction.user.id)
             save_server()
 
+            member_lines = []
+
+            for user_id in attendees:
+                member = interaction.guild.get_member(user_id)
+
+                if member:
+                    member_lines.append(f"• {member.display_name}")
+
+            members_text = (
+                "\n".join(member_lines)
+                if member_lines
+                else "No one has joined yet."
+            )
+
             embed = interaction.message.embeds[0].copy()
 
             embed.set_field_at(
                 index=3,
                 name="👥 Joined",
                 value=str(len(attendees)),
+                inline=False
+            )
+
+            embed.set_field_at(
+                index=4,
+                name="📋 Members",
+                value=members_text,
                 inline=False
             )
 
@@ -92,7 +112,6 @@ class IBJoinView(discord.ui.View):
             attendees = event.setdefault("attendees", [])
 
             if interaction.user.id not in attendees:
-
                 await interaction.response.send_message(
                     "❌ You haven't joined this IB event.",
                     ephemeral=True
@@ -102,12 +121,33 @@ class IBJoinView(discord.ui.View):
             attendees.remove(interaction.user.id)
             save_server()
 
+            member_lines = []
+
+            for user_id in attendees:
+                member = interaction.guild.get_member(user_id)
+
+                if member:
+                    member_lines.append(f"• {member.display_name}")
+
+            members_text = (
+                "\n".join(member_lines)
+                if member_lines
+                else "No one has joined yet."
+            )
+
             embed = interaction.message.embeds[0].copy()
 
             embed.set_field_at(
                 index=3,
                 name="👥 Joined",
                 value=str(len(attendees)),
+                inline=False
+            )
+
+            embed.set_field_at(
+                index=4,
+                name="📋 Members",
+                value=members_text,
                 inline=False
             )
 
@@ -135,9 +175,10 @@ class IB(app_commands.Group):
             name="ib",
             description="IB event commands"
         )
+
     @app_commands.command(
-        name="create",
-        description="Create an IB event"
+            name="create",
+            description="Create an IB event"
     )
     @app_commands.describe(
         date="YYYY-MM-DD",
@@ -219,6 +260,12 @@ class IB(app_commands.Group):
                     inline=False
                 )
 
+                embed.add_field(
+                    name="📋 Members",
+                    value="No one has joined yet.",
+                    inline=False
+                )
+
                 message = await channel.send(
                     content=mention,
                     embed=embed,
@@ -283,6 +330,7 @@ class IB(app_commands.Group):
         await interaction.response.send_message(
             embed=embed
         )
+
     @app_commands.command(
         name="edit",
         description="Edit an IB event"
@@ -310,9 +358,11 @@ class IB(app_commands.Group):
             return
 
         config = get_server(interaction.guild.id)
+
         events = config.get("ib", [])
 
         if number < 1 or number > len(events):
+
             await interaction.response.send_message(
                 "❌ Invalid event number.",
                 ephemeral=True
@@ -358,9 +408,11 @@ class IB(app_commands.Group):
             return
 
         config = get_server(interaction.guild.id)
+
         events = config.get("ib", [])
 
         if number < 1 or number > len(events):
+
             await interaction.response.send_message(
                 "❌ Invalid event number.",
                 ephemeral=True
@@ -399,6 +451,95 @@ class IB(app_commands.Group):
 
         await interaction.response.send_message(
             "🧹 All IB events have been deleted."
+        )
+
+    @app_commands.command(
+        name="attendees",
+        description="Show everyone who joined an IB event"
+    )
+    @app_commands.describe(
+        number="Event number from /ib list"
+    )
+    async def attendees(
+        self,
+        interaction: discord.Interaction,
+        number: int
+    ):
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ Server only.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+
+        events = config.get("ib", [])
+
+        if number < 1 or number > len(events):
+
+            await interaction.response.send_message(
+                "❌ Invalid event number.",
+                ephemeral=True
+            )
+            return
+
+        event = events[number - 1]
+
+        attendees = event.get("attendees", [])
+
+        embed = discord.Embed(
+            title=f"🏰 IB Event #{number}",
+            color=discord.Color.green()
+        )
+
+        embed.add_field(
+            name="📅 Date",
+            value=event["date"],
+            inline=True
+        )
+
+        embed.add_field(
+            name="🕒 Time",
+            value=event["time"],
+            inline=True
+        )
+
+        embed.add_field(
+            name="📝 Notes",
+            value=event["notes"],
+            inline=False
+        )
+
+        if attendees:
+
+            names = []
+
+            for user_id in attendees:
+
+                member = interaction.guild.get_member(user_id)
+
+                if member:
+                    names.append(f"• {member.display_name}")
+
+            embed.add_field(
+                name=f"👥 Joined ({len(names)})",
+                value="\n".join(names),
+                inline=False
+            )
+
+        else:
+
+            embed.add_field(
+                name="👥 Joined",
+                value="No members have joined yet.",
+                inline=False
+            )
+
+        await interaction.response.send_message(
+            embed=embed,
+            ephemeral=True
         )
 
 
