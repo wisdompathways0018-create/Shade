@@ -19,6 +19,7 @@ bot = commands.Bot(
     intents=intents
 )
 
+
 @bot.event
 async def on_ready():
 
@@ -29,6 +30,7 @@ async def on_ready():
         print(f"❌ Failed to sync commands: {e}")
 
     print(f"🤖 Logged in as {bot.user}")
+
 
 # ==========================================
 # Fun Slash Commands
@@ -95,7 +97,8 @@ async def rate(
     ]
 
     await interaction.response.send_message(
-        f"{member.mention} gets **{score}/100**!\n{random.choice(comments)}"
+        f"{member.mention} gets **{score}/100**!\n"
+        f"{random.choice(comments)}"
     )
 
 
@@ -112,19 +115,42 @@ async def roast(
 ):
 
     roasts = [
-        f"💀 {member.mention} has a better chance of tripping over Wi-Fi than winning.",
-        f"😂 {member.mention} plays so badly even tutorials feel insulted.",
-        f"🤡 {member.mention} is living proof that confidence isn't the same as skill.",
-        f"📉 {member.mention}'s gameplay should be classified as a natural disaster.",
-        f"🎮 {member.mention} is the reason the enemy team smiles.",
-        f"🗑️ {member.mention} couldn't carry a backpack, let alone the team.",
-        f"☠️ {member.mention} has mastered the art of spectacular failure.",
-        f"🔥 {member.mention} is the MVP... for the opposing team."
+        f"💀 {member.mention} donates more troops than they kill.",
+        f"🏰 {member.mention} thinks gathering counts as PvP.",
+        f"😂 {member.mention} loses castles faster than gathering nodes.",
+        f"🪦 {member.mention} is the enemy's favorite source of merit.",
+        f"🔥 {member.mention} marches so late the battle is already over.",
+        f"⚔️ {member.mention}'s immortals are on permanent vacation.",
+        f"📉 {member.mention}'s STP is just for decoration.",
+        f"🫡 {member.mention} shows up to Frost after Frost ends.",
+        f"❄️ {member.mention} thinks Frost is a farming event.",
+        f"🏹 {member.mention} attacks tiles with full confidence.",
+        f"📦 {member.mention} donates speedups to the enemy.",
+        f"🐢 {member.mention}'s march speed is measured in business days.",
+        f"😂 {member.mention} still asks where Ymir spawned.",
+        f"⚰️ {member.mention} treats KE like a sightseeing tour.",
+        f"👑 {member.mention} has never met a shield they didn't forget to use.",
+        f"📜 {member.mention} ignores alliance mail better than anyone.",
+        f"🏕️ {member.mention} has been '5 minutes away' from Frost for an hour.",
+        f"🤡 {member.mention} calls reinforcements after the castle is already burning.",
+        f"🛡️ {member.mention} protects the enemy better than the alliance.",
+        f"🏰 {member.mention}'s castle burns so often it's a landmark.",
+        f"😂 Even barbarians avoid following {member.mention}'s strategy.",
+        f"💤 {member.mention} joins Alliance Supremacy after it's finished.",
+        f"🪵 {member.mention} farms wood during Kill Event.",
+        f"📉 {member.mention}'s contribution graph needs a microscope.",
+        f"🥔 {member.mention} has the map awareness of a level 1 goblin.",
+        f"🎯 {member.mention} couldn't rally a barn door.",
+        f"💀 {member.mention} is the reason R5 keeps sending reminder mails.",
+        f"⚔️ {member.mention} loses more troops than the enemy gains points.",
+        f"🔥 {member.mention}'s greatest achievement is staying offline during every important event.",
+        f"👑 If excuses earned merit, {member.mention} would rank first."
     ]
 
     await interaction.response.send_message(
         random.choice(roasts)
     )
+
 
 # ==========================================
 # Alliance Setup Commands
@@ -218,13 +244,13 @@ async def pingrole(
 
 
 @bot.tree.command(
-    name="eventchannel",
-    description="Set the reminder channel"
+    name="frostchannel",
+    description="Set the Frost announcement channel"
 )
 @app_commands.describe(
     channel="Select a text channel"
 )
-async def eventchannel(
+async def frostchannel(
     interaction: discord.Interaction,
     channel: discord.TextChannel
 ):
@@ -238,11 +264,98 @@ async def eventchannel(
 
     config = get_server(interaction.guild.id)
 
-    config["reminder_channel"] = channel.id
+    config["frost_channel"] = channel.id
     save_server()
 
     await interaction.response.send_message(
-        f"✅ Reminder channel set to {channel.mention}"
+        f"✅ Frost announcements will be sent to {channel.mention}"
+    )
+
+
+@bot.tree.command(
+    name="kechannel",
+    description="Set the Kill Event announcement channel"
+)
+@app_commands.describe(
+    channel="Select a text channel"
+)
+async def kechannel(
+    interaction: discord.Interaction,
+    channel: discord.TextChannel
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["ke_channel"] = channel.id
+    save_server()
+
+    await interaction.response.send_message(
+        f"✅ Kill Event announcements will be sent to {channel.mention}"
+    )
+
+
+@bot.tree.command(
+    name="ibchannel",
+    description="Set the IB announcement channel"
+)
+@app_commands.describe(
+    channel="Select a text channel"
+)
+async def ibchannel(
+    interaction: discord.Interaction,
+    channel: discord.TextChannel
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["ib_channel"] = channel.id
+    save_server()
+
+    await interaction.response.send_message(
+        f"✅ IB announcements will be sent to {channel.mention}"
+    )
+
+
+@bot.tree.command(
+    name="aschannel",
+    description="Set the Alliance Supremacy announcement channel"
+)
+@app_commands.describe(
+    channel="Select a text channel"
+)
+async def aschannel(
+    interaction: discord.Interaction,
+    channel: discord.TextChannel
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["as_channel"] = channel.id
+    save_server()
+
+    await interaction.response.send_message(
+        f"✅ Alliance Supremacy announcements will be sent to {channel.mention}"
     )
 
 
@@ -290,23 +403,31 @@ async def setup(interaction: discord.Interaction):
         inline=False
     )
 
-    if config.get("reminder_channel"):
-        channel = interaction.guild.get_channel(
-            config["reminder_channel"]
-        )
-        reminder = channel.mention if channel else "Unknown Channel"
-    else:
-        reminder = "Not Set"
+    channels = [
+        ("Frost", "frost_channel"),
+        ("Kill Event", "ke_channel"),
+        ("IB", "ib_channel"),
+        ("Alliance Supremacy", "as_channel")
+    ]
 
-    embed.add_field(
-        name="Reminder Channel",
-        value=reminder,
-        inline=False
-    )
+    for title, key in channels:
+
+        if config.get(key):
+            channel = interaction.guild.get_channel(config[key])
+            value = channel.mention if channel else "Unknown Channel"
+        else:
+            value = "Not Set"
+
+        embed.add_field(
+            name=title,
+            value=value,
+            inline=False
+        )
 
     await interaction.response.send_message(
         embed=embed
     )
+
 
 # ==========================================
 # Global Error Handler
@@ -337,6 +458,7 @@ async def on_app_command_error(
     except Exception as e:
         print(e)
 
+
 import events
 import reminders
 import roles
@@ -356,3 +478,4 @@ ke.setup(bot)
 
 if __name__ == "__main__":
     bot.run(TOKEN)
+
