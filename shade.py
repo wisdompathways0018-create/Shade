@@ -464,12 +464,14 @@ import reminders
 import roles
 import ib
 import ke
+import supremacy
 
 events.setup(bot)
 reminders.setup(bot)
 roles.setup(bot)
 ib.setup(bot)
 ke.setup(bot)
+supremacy.setup(bot)
 
 
 # ==========================================
