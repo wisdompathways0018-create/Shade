@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import discord
 
 from config import get_server
-from ib import IBJoinView
 
 
 class ReminderEngine:
@@ -110,7 +109,7 @@ class ReminderEngine:
                 self.sent.add(key)
 
                 embed = discord.Embed(
-                    title=f"❄ Frost Reminder ({reminder})",
+                    title=f"❄️ Frost Reminder ({reminder})",
                     color=discord.Color.blue()
                 )
 
@@ -136,7 +135,8 @@ class ReminderEngine:
                     content=mention,
                     embed=embed
                 )
-async def check_ib(self):
+
+    async def check_ib(self):
 
         for guild in self.bot.guilds:
 
@@ -207,10 +207,10 @@ async def check_ib(self):
 
                 await channel.send(
                     content=mention,
-                    embed=embed,
-                    view=IBJoinView()
+                    embed=embed
                 )
-async def check_supremacy(self):
+
+    async def check_supremacy(self):
 
         for guild in self.bot.guilds:
 
@@ -289,6 +289,8 @@ async def check_supremacy(self):
                     content=mention,
                     embed=embed
                 )
+
+
 def setup(bot):
 
     engine = ReminderEngine(bot)
