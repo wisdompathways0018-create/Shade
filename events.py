@@ -59,7 +59,7 @@ class Frost(app_commands.Group):
 
         save_server()
 
-        channel_id = config.get("reminder_channel")
+        channel_id = config.get("frost_channel")
 
         if channel_id:
 
