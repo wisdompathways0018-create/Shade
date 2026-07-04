@@ -224,7 +224,7 @@ class IB(app_commands.Group):
         config["ib"].append(event)
         save_server()
 
-        channel_id = config.get("reminder_channel")
+        channel_id = config.get("ib_channel")
 
         if channel_id:
 
