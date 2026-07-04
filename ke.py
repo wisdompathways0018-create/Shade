@@ -59,7 +59,7 @@ class KE(app_commands.Group):
 
         save_server()
 
-        channel_id = config.get("reminder_channel")
+        channel_id = config.get("ke_channel")
 
         if channel_id:
 
