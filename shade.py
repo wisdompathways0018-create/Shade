@@ -360,6 +360,63 @@ async def aschannel(
 
 
 @bot.tree.command(
+    name="corchannel",
+    description="Set the Contention of Relics announcement channel"
+)
+@app_commands.describe(
+    channel="Select a text channel"
+)
+async def corchannel(
+    interaction: discord.Interaction,
+    channel: discord.TextChannel
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["cor_channel"] = channel.id
+    save_server()
+
+    await interaction.response.send_message(
+        f"✅ Contention of Relics announcements will be sent to {channel.mention}"
+    )
+
+
+@bot.tree.command(
+    name="malenachannel",
+    description="Set the Malena announcement channel"
+)
+@app_commands.describe(
+    channel="Select a text channel"
+)
+async def malenachannel(
+    interaction: discord.Interaction,
+    channel: discord.TextChannel
+):
+
+    if interaction.guild is None:
+        await interaction.response.send_message(
+            "❌ This command can only be used in a server.",
+            ephemeral=True
+        )
+        return
+
+    config = get_server(interaction.guild.id)
+
+    config["malena_channel"] = channel.id
+    save_server()
+
+    await interaction.response.send_message(
+        f"✅ Malena announcements will be sent to {channel.mention}"
+    )
+
+@bot.tree.command(
     name="setup",
     description="View your Shade configuration"
 )
@@ -392,9 +449,15 @@ async def setup(interaction: discord.Interaction):
     )
 
     if config.get("ping_role"):
-        role = interaction.guild.get_role(config["ping_role"])
+
+        role = interaction.guild.get_role(
+            config["ping_role"]
+        )
+
         ping = role.mention if role else "Unknown Role"
+
     else:
+
         ping = "Not Set"
 
     embed.add_field(
@@ -404,18 +467,30 @@ async def setup(interaction: discord.Interaction):
     )
 
     channels = [
-        ("Frost", "frost_channel"),
-        ("Kill Event", "ke_channel"),
-        ("IB", "ib_channel"),
-        ("Alliance Supremacy", "as_channel")
+        ("❄️ Frost", "frost_channel"),
+        ("🏰 Iron Bastion", "ib_channel"),
+        ("⚔️ Kill Event", "ke_channel"),
+        ("🏆 Alliance Supremacy", "as_channel"),
+        ("🗿 Contention of Relics", "cor_channel"),
+        ("👑 Malena", "malena_channel")
     ]
 
     for title, key in channels:
 
         if config.get(key):
-            channel = interaction.guild.get_channel(config[key])
-            value = channel.mention if channel else "Unknown Channel"
+
+            channel = interaction.guild.get_channel(
+                config[key]
+            )
+
+            value = (
+                channel.mention
+                if channel
+                else "Unknown Channel"
+            )
+
         else:
+
             value = "Not Set"
 
         embed.add_field(
@@ -427,8 +502,6 @@ async def setup(interaction: discord.Interaction):
     await interaction.response.send_message(
         embed=embed
     )
-
-
 # ==========================================
 # Global Error Handler
 # ==========================================
@@ -458,13 +531,14 @@ async def on_app_command_error(
     except Exception as e:
         print(e)
 
-
 import events
 import reminders
 import roles
 import ib
 import ke
 import supremacy
+import cor
+import malena
 
 events.setup(bot)
 reminders.setup(bot)
@@ -472,6 +546,8 @@ roles.setup(bot)
 ib.setup(bot)
 ke.setup(bot)
 supremacy.setup(bot)
+cor.setup(bot)
+malena.setup(bot)
 
 
 # ==========================================
@@ -480,4 +556,3 @@ supremacy.setup(bot)
 
 if __name__ == "__main__":
     bot.run(TOKEN)
-
