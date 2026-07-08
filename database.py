@@ -5,17 +5,21 @@ DATABASE_FILE = "database.json"
 
 
 def load_database():
+
     if not os.path.exists(DATABASE_FILE):
         return {}
 
     try:
+
         with open(DATABASE_FILE, "r") as f:
             return json.load(f)
+
     except Exception:
         return {}
 
 
 def save_database(data):
+
     with open(DATABASE_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -34,16 +38,23 @@ def get_guild(guild_id):
             "alliance_name": None,
             "timezone": "UTC",
 
-            "reminder_channel": None,
             "ping_role": None,
 
             "frost": [],
             "ib": [],
+            "ke": [],
             "supremacy": [],
+            "cor": [],
             "lords": [],
             "relic": [],
             "malena": [],
-            "custom_events": []
+            "custom_events": [],
+
+            "frost_channel": None,
+            "ib_channel": None,
+            "ke_channel": None,
+            "as_channel": None,
+            "cor_channel": None
         }
 
         save_database(database)
@@ -52,4 +63,5 @@ def get_guild(guild_id):
 
 
 def save():
+
     save_database(database)
