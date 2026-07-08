@@ -54,7 +54,8 @@ def get_guild(guild_id):
             "ib_channel": None,
             "ke_channel": None,
             "as_channel": None,
-            "cor_channel": None
+            "cor_channel": None,
+            "malena_channel": None
         }
 
         save_database(database)
