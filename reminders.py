@@ -23,7 +23,10 @@ class ReminderEngine:
 
                 await self.check_frost()
                 await self.check_ib()
+                await self.check_ke()
                 await self.check_supremacy()
+                await self.check_cor()
+                await self.check_malena()
 
             except Exception as e:
                 print(f"[Reminder Error] {e}")
@@ -134,7 +137,7 @@ class ReminderEngine:
                 await channel.send(
                     content=mention,
                     embed=embed
-                )
+                )  
 
     async def check_ib(self):
 
@@ -210,6 +213,74 @@ class ReminderEngine:
                     embed=embed
                 )
 
+    async def check_ke(self):
+
+        for guild in self.bot.guilds:
+
+            config = get_server(guild.id)
+
+            channel_id = config.get("ke_channel")
+
+            if not channel_id:
+                continue
+
+            channel = guild.get_channel(channel_id)
+
+            if channel is None:
+                continue
+
+            mention = "@everyone"
+
+            for event in config.get("ke", []):
+
+                reminder = self.reminder_type(
+                    event["start_date"],
+                    "00:00"
+                )
+
+                if reminder is None:
+                    continue
+
+                key = (
+                    guild.id,
+                    "KE",
+                    event["start_date"],
+                    reminder
+                )
+
+                if key in self.sent:
+                    continue
+
+                self.sent.add(key)
+
+                embed = discord.Embed(
+                    title=f"⚔️ Kill Event Reminder ({reminder})",
+                    color=discord.Color.red()
+                )
+
+                embed.add_field(
+                    name="📅 Start Date",
+                    value=event["start_date"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📅 End Date",
+                    value=event["end_date"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📝 Notes",
+                    value=event["notes"],
+                    inline=False
+                )
+
+                await channel.send(
+                    content=mention,
+                    embed=embed
+                ) 
+
     async def check_supremacy(self):
 
         for guild in self.bot.guilds:
@@ -276,6 +347,163 @@ class ReminderEngine:
                 embed.add_field(
                     name="⭐ Minimum STP",
                     value=f"{event['minimum_stp']:,}",
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📝 Notes",
+                    value=event["notes"],
+                    inline=False
+                )
+
+                await channel.send(
+                    content=mention,
+                    embed=embed
+                )
+
+    async def check_cor(self):
+
+        for guild in self.bot.guilds:
+
+            config = get_server(guild.id)
+
+            channel_id = config.get("cor_channel")
+
+            if not channel_id:
+                continue
+
+            channel = guild.get_channel(channel_id)
+
+            if channel is None:
+                continue
+
+            mention = "@everyone"
+
+            for event in config.get("cor", []):
+
+                reminder = self.reminder_type(
+                    event["date"],
+                    event["time"]
+                )
+
+                if reminder is None:
+                    continue
+
+                key = (
+                    guild.id,
+                    "CoR",
+                    event["relic"],
+                    event["date"],
+                    event["time"],
+                    reminder
+                )
+
+                if key in self.sent:
+                    continue
+
+                self.sent.add(key)
+
+                embed = discord.Embed(
+                    title=f"🗿 Contention of Relics Reminder ({reminder})",
+                    color=discord.Color.dark_purple()
+                )
+
+                embed.add_field(
+                    name="🗿 Relic",
+                    value=event["relic"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="⭐ Node Level",
+                    value=str(event["node_level"]),
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📅 Date",
+                    value=event["date"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="🕒 Time",
+                    value=event["time"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="📝 Notes",
+                    value=event["notes"],
+                    inline=False
+                )
+
+                await channel.send(
+                    content=mention,
+                    embed=embed
+                )
+
+    async def check_malena(self):
+
+        for guild in self.bot.guilds:
+
+            config = get_server(guild.id)
+
+            channel_id = config.get("malena_channel")
+
+            if not channel_id:
+                continue
+
+            channel = guild.get_channel(channel_id)
+
+            if channel is None:
+                continue
+
+            mention = "@everyone"
+
+            for event in config.get("malena", []):
+
+                reminder = self.reminder_type(
+                    event["date"],
+                    event["time"]
+                )
+
+                if reminder is None:
+                    continue
+
+                key = (
+                    guild.id,
+                    "Malena",
+                    event["date"],
+                    event["time"],
+                    reminder
+                )
+
+                if key in self.sent:
+                    continue
+
+                self.sent.add(key)
+
+                embed = discord.Embed(
+                    title=f"👑 Malena Reminder ({reminder})",
+                    color=discord.Color.magenta()
+                )
+
+                embed.add_field(
+                    name="📅 Date",
+                    value=event["date"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="🕒 Time",
+                    value=event["time"],
+                    inline=True
+                )
+
+                embed.add_field(
+                    name="⚔️ Difficulty",
+                    value=event["difficulty"],
                     inline=True
                 )
 
