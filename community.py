@@ -220,8 +220,6 @@ def setup(bot: commands.Bot):
         if message.guild is None or message.author.bot:
             return
         config = get_server(message.guild.id)
-
-        # AFK removal and notifications.
         afks = config.setdefault("afk", {})
         author_key = str(message.author.id)
         if author_key in afks:
@@ -232,7 +230,6 @@ def setup(bot: commands.Bot):
             if data:
                 await message.channel.send(f"💤 {mentioned.display_name} is AFK: **{data.get('reason', 'AFK')}**", delete_after=8)
 
-        # XP with a per-user cooldown to prevent spam farming.
         now = time.time()
         levels = config.setdefault("levels", {})
         data = levels.setdefault(author_key, {"xp": 0, "level": 0, "last_xp": 0})
@@ -240,7 +237,7 @@ def setup(bot: commands.Bot):
             gain = random.randint(8, 15)
             data["xp"] = int(data.get("xp", 0)) + gain
             old_level = int(data.get("level", 0))
-            new_level = int((data["xp"] // 100))
+            new_level = int(data["xp"] // 100)
             data["level"] = new_level
             data["last_xp"] = now
             if new_level > old_level:
@@ -252,7 +249,7 @@ def setup(bot: commands.Bot):
 
     @bot.listen("on_raw_reaction_add")
     async def starboard_listener(payload: discord.RawReactionActionEvent):
-        if payload.guild_id is None or str(payload.emoji) != "⭐" or payload.user_id == bot.user.id:
+        if payload.guild_id is None or str(payload.emoji) != "⭐" or (bot.user and payload.user_id == bot.user.id):
             return
         guild = bot.get_guild(payload.guild_id)
         if guild is None:
@@ -293,4 +290,4 @@ def setup(bot: commands.Bot):
         except discord.HTTPException:
             pass
 
-    asyncio.create_task(_birthday_loop(bot))
+    bot.loop.create_task(_birthday_loop(bot))
