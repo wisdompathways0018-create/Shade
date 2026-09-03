@@ -189,6 +189,7 @@ import supremacy
 import cor
 import malena
 import moderation
+import universal
 
 events.setup(bot)
 reminders.setup(bot)
@@ -199,6 +200,7 @@ supremacy.setup(bot)
 cor.setup(bot)
 malena.setup(bot)
 moderation.setup(bot)
+universal.setup(bot)
 
 
 if __name__ == "__main__":
