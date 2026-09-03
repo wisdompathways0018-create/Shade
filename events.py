@@ -94,8 +94,8 @@ class Frost(app_commands.Group):
         save_server()
         await interaction.response.send_message("🧹 All Frost events have been deleted.")
 
-    @app_commands.command(name="addmap", description="Add one Frozen Realm map section")
-    @app_commands.describe(image="Upload one Frost map screenshot")
+    @app_commands.command(name="addmap", description="Upload or replace the fitted Frozen Realm map")
+    @app_commands.describe(image="Upload the complete fitted Frost map image")
     async def addmap(self, interaction: discord.Interaction, image: discord.Attachment):
         if not await self._leadership_only(interaction):
             return
@@ -104,45 +104,43 @@ class Frost(app_commands.Group):
             return
 
         config = get_server(interaction.guild.id)
-        maps = config.setdefault("frost_maps", [])
-        maps.append({"url": image.url, "name": image.filename})
+        config["frost_map_url"] = image.url
+        config["frost_map_name"] = image.filename
         save_server()
 
         await interaction.response.send_message(
-            f"✅ Frost map section **#{len(maps)}** saved.\n"
-            f"Use `/frost map` to display the complete saved map.",
-            ephemeral=True
+            "✅ **Fitted Frost map saved.**\n"
+            "Use `/frost map` to display it. R5/R6 can upload another image with `/frost addmap` anytime to replace it.",
+            ephemeral=True,
         )
 
-    @app_commands.command(name="map", description="Display the saved Frozen Realm map")
+    @app_commands.command(name="map", description="Display the complete fitted Frozen Realm map")
     async def map(self, interaction: discord.Interaction):
         if not await self._leadership_only(interaction):
             return
         config = get_server(interaction.guild.id)
-        maps = config.get("frost_maps", [])
-        if not maps:
+        url = config.get("frost_map_url")
+        if not url:
             await interaction.response.send_message(
-                "❄️ No Frost map sections have been saved yet. R5/R6 can use `/frost addmap` to upload them.",
+                "❄️ No fitted Frost map has been uploaded yet. R5/R6 can use `/frost addmap` to upload one.",
                 ephemeral=True,
             )
             return
 
-        await interaction.response.defer()
-        await interaction.followup.send(f"❄️ **Frozen Realm — Complete Map** ({len(maps)} sections)")
-        for index, item in enumerate(maps, start=1):
-            embed = discord.Embed(title=f"❄️ Frozen Realm Map — Section {index}", color=discord.Color.blue())
-            embed.set_image(url=item["url"])
-            embed.set_footer(text=f"Shade Frost Map • Section {index}/{len(maps)}")
-            await interaction.followup.send(embed=embed)
+        embed = discord.Embed(title="❄️ Frozen Realm — Complete Fitted Map", color=discord.Color.blue())
+        embed.set_image(url=url)
+        embed.set_footer(text="Shade • Frost Leadership Map")
+        await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="clearmap", description="Remove all saved Frost map sections")
+    @app_commands.command(name="clearmap", description="Remove the saved fitted Frost map")
     async def clearmap(self, interaction: discord.Interaction):
         if not await self._leadership_only(interaction):
             return
         config = get_server(interaction.guild.id)
-        config["frost_maps"] = []
+        config.pop("frost_map_url", None)
+        config.pop("frost_map_name", None)
         save_server()
-        await interaction.response.send_message("🧹 All saved Frost map sections have been removed.", ephemeral=True)
+        await interaction.response.send_message("🧹 Saved fitted Frost map removed.", ephemeral=True)
 
     @app_commands.command(name="setrules", description="Set the Frost rules used by Shade")
     @app_commands.describe(rules="Paste the complete Frost rules")
