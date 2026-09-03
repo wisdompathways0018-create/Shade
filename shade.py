@@ -416,6 +416,7 @@ async def malenachannel(
         f"✅ Malena announcements will be sent to {channel.mention}"
     )
 
+
 @bot.tree.command(
     name="setup",
     description="View your Shade configuration"
@@ -502,6 +503,8 @@ async def setup(interaction: discord.Interaction):
     await interaction.response.send_message(
         embed=embed
     )
+
+
 # ==========================================
 # Global Error Handler
 # ==========================================
@@ -539,6 +542,7 @@ import ke
 import supremacy
 import cor
 import malena
+import moderation
 
 events.setup(bot)
 reminders.setup(bot)
@@ -548,6 +552,7 @@ ke.setup(bot)
 supremacy.setup(bot)
 cor.setup(bot)
 malena.setup(bot)
+moderation.setup(bot)
 
 
 # ==========================================
