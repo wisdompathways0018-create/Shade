@@ -154,12 +154,15 @@ async def _warn(member: discord.Member, guild: discord.Guild):
 async def _send_warning_ticket(message: discord.Message, warning_count: int, warning_id: str):
     guild = message.guild
     if guild is None:
-        return
+        return False
 
     config = get_server(guild.id)
     channel = _find_warning_channel(guild, config)
+
+    # If #warning-logs cannot be found, use the command channel as a guaranteed
+    # fallback so the warning ticket is never silently lost.
     if channel is None:
-        return
+        channel = message.channel
 
     embed = discord.Embed(
         title="⚠️ Member Warned",
@@ -167,7 +170,7 @@ async def _send_warning_ticket(message: discord.Message, warning_count: int, war
         timestamp=discord.utils.utcnow()
     )
     embed.add_field(name="Member", value=message.author.mention, inline=False)
-    embed.add_field(name="Warned By", value=f"{message.guild.me.mention if message.guild.me else 'Shade'}", inline=False)
+    embed.add_field(name="Warned By", value=f"{guild.me.mention if guild.me else 'Shade'}", inline=False)
     embed.add_field(name="Reason", value="Vulgar/abusive language detected by Shade.", inline=False)
     embed.add_field(name="Duration", value="No timeout (warning only)", inline=False)
     embed.add_field(name="Messaging", value="Allowed (warning only)", inline=False)
@@ -178,8 +181,17 @@ async def _send_warning_ticket(message: discord.Message, warning_count: int, war
 
     try:
         await channel.send(embed=embed)
+        return True
     except (discord.Forbidden, discord.HTTPException):
-        pass
+        # If the configured #warning-logs channel is inaccessible, try the
+        # original channel instead of losing the ticket completely.
+        if channel.id != message.channel.id:
+            try:
+                await message.channel.send(embed=embed)
+                return True
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+        return False
 
 
 def setup(bot: commands.Bot):
@@ -190,22 +202,26 @@ def setup(bot: commands.Bot):
         if not message.content or not contains_profanity(message.content):
             return
 
+        # Do not stop moderation if message deletion fails because Shade lacks
+        # Manage Messages. The warning ticket must still be recorded/logged.
         try:
             await message.delete()
         except (discord.Forbidden, discord.NotFound, discord.HTTPException):
-            return
+            pass
 
         warning_count, warning_id = await _warn(message.author, message.guild)
 
         # Log a ticket-style warning in #warning-logs (or the configured channel).
-        await _send_warning_ticket(message, warning_count, warning_id)
+        ticket_sent = await _send_warning_ticket(message, warning_count, warning_id)
 
         try:
-            await message.channel.send(
+            reply = (
                 f"⚠️ {message.author.mention}, vulgar/abusive language is not allowed here. "
-                f"**Warning #{warning_count}** recorded. Warning ID: `{warning_id}`",
-                delete_after=8,
+                f"**Warning #{warning_count}** recorded. Warning ID: `{warning_id}`"
             )
+            if not ticket_sent:
+                reply += "\n⚠️ Warning log could not be posted. Please check Shade's channel permissions."
+            await message.channel.send(reply, delete_after=8)
         except (discord.Forbidden, discord.HTTPException):
             pass
 
