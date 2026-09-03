@@ -155,7 +155,6 @@ import malena
 import moderation
 import universal
 import community
-import info_commands
 
 events.setup(bot)
 reminders.setup(bot)
@@ -168,7 +167,6 @@ malena.setup(bot)
 moderation.setup(bot)
 universal.setup(bot)
 community.setup(bot)
-info_commands.setup(bot)
 
 
 if __name__ == "__main__":
