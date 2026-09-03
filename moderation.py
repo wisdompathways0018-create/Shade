@@ -1,6 +1,9 @@
 import re
+import secrets
+import string
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from config import get_server, save_server
@@ -70,8 +73,8 @@ def _obfuscated_token_match(text: str) -> bool:
     if _token_match(text, OBFUSCATED_TERMS):
         return True
 
-    # Only join runs of 2-4 single-letter alphabetic tokens. This catches
-    # deliberate forms such as 'm c'/'b c'/'b h o s d i k e' while avoiding
+    # Join only runs of 2-9 single-letter tokens. This catches deliberate
+    # forms such as 'm c'/'b c'/'b h o s d i k e' while avoiding
     # substring matching inside ordinary English words.
     words = text.split()
     for size in (2, 3, 4, 5, 6, 7, 8, 9):
@@ -104,13 +107,79 @@ def contains_profanity(message: str) -> bool:
 is_vulgar = contains_profanity
 
 
+def _make_warning_id() -> str:
+    """Create a short ticket-style warning ID such as WRN-MTK8CX96-NV3K."""
+    alphabet = string.ascii_uppercase + string.digits
+    return f"WRN-{''.join(secrets.choice(alphabet) for _ in range(8))}-{''.join(secrets.choice(alphabet) for _ in range(4))}"
+
+
+def _find_warning_channel(guild: discord.Guild, config: dict) -> discord.TextChannel | None:
+    """Use the configured log channel, otherwise auto-detect #warning-logs."""
+    channel_id = config.get("warning_channel")
+    if channel_id:
+        channel = guild.get_channel(channel_id)
+        if isinstance(channel, discord.TextChannel):
+            return channel
+
+    for channel in guild.text_channels:
+        if channel.name.lower() in {"warning-logs", "warning_logs", "warninglogs"}:
+            return channel
+
+    return None
+
+
 async def _warn(member: discord.Member, guild: discord.Guild):
     config = get_server(guild.id)
     warnings = config.setdefault("moderation_warnings", {})
     user_id = str(member.id)
     warnings[user_id] = int(warnings.get(user_id, 0)) + 1
+    warning_count = warnings[user_id]
+
+    warning_id = _make_warning_id()
+    tickets = config.setdefault("moderation_warning_tickets", [])
+    tickets.append({
+        "warning_id": warning_id,
+        "user_id": member.id,
+        "warning_count": warning_count
+    })
+
+    # Keep the persistent log from growing without bound.
+    if len(tickets) > 1000:
+        del tickets[:-1000]
+
     save_server()
-    return warnings[user_id]
+    return warning_count, warning_id
+
+
+async def _send_warning_ticket(message: discord.Message, warning_count: int, warning_id: str):
+    guild = message.guild
+    if guild is None:
+        return
+
+    config = get_server(guild.id)
+    channel = _find_warning_channel(guild, config)
+    if channel is None:
+        return
+
+    embed = discord.Embed(
+        title="⚠️ Member Warned",
+        color=discord.Color.red(),
+        timestamp=discord.utils.utcnow()
+    )
+    embed.add_field(name="Member", value=message.author.mention, inline=False)
+    embed.add_field(name="Warned By", value=f"{message.guild.me.mention if message.guild.me else 'Shade'}", inline=False)
+    embed.add_field(name="Reason", value="Vulgar/abusive language detected by Shade.", inline=False)
+    embed.add_field(name="Duration", value="No timeout (warning only)", inline=False)
+    embed.add_field(name="Messaging", value="Allowed (warning only)", inline=False)
+    embed.add_field(name="Warning Count", value=str(warning_count), inline=False)
+    embed.add_field(name="Command Channel", value=message.channel.mention, inline=False)
+    embed.add_field(name="Warning ID", value=f"`{warning_id}`", inline=False)
+    embed.set_footer(text="Shade Moderation • Warning Ticket")
+
+    try:
+        await channel.send(embed=embed)
+    except (discord.Forbidden, discord.HTTPException):
+        pass
 
 
 def setup(bot: commands.Bot):
@@ -126,13 +195,40 @@ def setup(bot: commands.Bot):
         except (discord.Forbidden, discord.NotFound, discord.HTTPException):
             return
 
-        warning_count = await _warn(message.author, message.guild)
+        warning_count, warning_id = await _warn(message.author, message.guild)
+
+        # Log a ticket-style warning in #warning-logs (or the configured channel).
+        await _send_warning_ticket(message, warning_count, warning_id)
 
         try:
             await message.channel.send(
                 f"⚠️ {message.author.mention}, vulgar/abusive language is not allowed here. "
-                f"**Warning #{warning_count}** recorded.",
+                f"**Warning #{warning_count}** recorded. Warning ID: `{warning_id}`",
                 delete_after=8,
             )
         except (discord.Forbidden, discord.HTTPException):
             pass
+
+    @bot.tree.command(name="warningchannel", description="Set the channel for Shade warning tickets")
+    @app_commands.describe(channel="Select the warning log channel")
+    async def warningchannel(interaction: discord.Interaction, channel: discord.TextChannel):
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "❌ This command can only be used in a server.", ephemeral=True
+            )
+            return
+
+        if not interaction.user.guild_permissions.manage_guild:
+            await interaction.response.send_message(
+                "❌ You need **Manage Server** permission to set the warning channel.",
+                ephemeral=True
+            )
+            return
+
+        config = get_server(interaction.guild.id)
+        config["warning_channel"] = channel.id
+        save_server()
+        await interaction.response.send_message(
+            f"✅ Shade warning tickets will be sent to {channel.mention}",
+            ephemeral=True
+        )
