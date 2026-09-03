@@ -56,8 +56,10 @@ def get_guild(guild_id):
             "as_channel": None,
             "cor_channel": None,
             "malena_channel": None,
+            "warning_channel": None,
 
-            "moderation_warnings": {}
+            "moderation_warnings": {},
+            "moderation_warning_tickets": []
         }
 
         save_database(database)
@@ -65,6 +67,8 @@ def get_guild(guild_id):
     else:
         # Backward-compatible migration for existing guild records.
         database[guild_id].setdefault("moderation_warnings", {})
+        database[guild_id].setdefault("moderation_warning_tickets", [])
+        database[guild_id].setdefault("warning_channel", None)
 
     return database[guild_id]
 
