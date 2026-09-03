@@ -189,7 +189,6 @@ import supremacy
 import cor
 import malena
 import moderation
-import frost_guide
 
 events.setup(bot)
 reminders.setup(bot)
@@ -200,7 +199,6 @@ supremacy.setup(bot)
 cor.setup(bot)
 malena.setup(bot)
 moderation.setup(bot)
-frost_guide.setup(bot)
 
 
 if __name__ == "__main__":
