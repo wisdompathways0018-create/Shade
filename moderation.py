@@ -5,23 +5,31 @@ from discord.ext import commands
 
 from config import get_server, save_server
 
-
-# Common Hindi/Hinglish profanity patterns.
-# Matching is performed after normalising case, punctuation and common leetspeak.
-VULGAR_PATTERNS = [
-    r"\bmadarchod\b", r"\bmc\b", r"\bmadarchod\b",
-    r"\bbehenchod\b", r"\bbhenchod\b", r"\bbc\b",
-    r"\bchutiya\b", r"\bchutiy[ae]\b", r"\bchut\b",
-    r"\bgandu\b", r"\bgandua\b", r"\bbhosd[aiy]k?\b",
-    r"\bbhosdi\b", r"\bbhosdike\b", r"\brand[iy]\b",
-    r"\bharamzada\b", r"\bharamzade\b", r"\bkamina\b",
-    r"\bkamini\b", r"\bkutte?\b", r"\bsuar\b",
-    r"\blavde?\b", r"\blund\b", r"\bgaand\b", r"\bchodu\b",
-]
+# Hindi/Hinglish abusive-word variants supplied for Shade moderation.
+# Text is normalised first so spacing, punctuation and common leetspeak are caught.
+VULGAR_TERMS = {
+    "bsdk", "bhosdike", "bhosdi ke", "bhosdikey", "bhosadike", "bhosda",
+    "bhosdi", "bhosdiwala", "mc", "m c", "madarchod", "madar chod",
+    "madarchuda", "madarchudi", "madarchut", "bc", "b c", "behenchod",
+    "behen chod", "bhenchod", "bhen chod", "behen ch*d", "bhen ch*d",
+    "chutiya", "chutiye", "chutia", "chuti", "chutiyapa", "chutiyapanti",
+    "chutmarike", "chut mari ke", "gandu", "gaand", "gand", "gandfat",
+    "gaandfat", "gand mara", "gaand mara", "gand marao", "randi", "rand",
+    "randwa", "randi ka", "randi ke", "randi khana", "harami", "haraami",
+    "haramzada", "haramzade", "haramkhor", "kamine", "kamina", "kaminey",
+    "kaminapan", "kutte", "kutta", "kutti", "kutiya", "kutte ka", "kuttiya",
+    "lodu", "lauda", "launda", "lund", "lundiya", "lund chus", "lund chusna",
+    "chakka", "hijda", "hijre", "sala", "saala", "saale", "saali",
+    "saala harami", "nalayak", "nikamma", "bakchod", "bakchodi", "bakchodi kar",
+    "bakchodiya", "bkl", "b k l", "bklol", "bklolb.h.o.s.d.i.k.e",
+    "b h o s d i k e", "bh0sdike", "bh0sd1ke", "bhosd1ke", "bhosd!ke",
+    "bhosd@ke", "m@d@rch0d", "m4d4rch0d", "m4d4rchod", "chut1ya", "chut!ya",
+    "g@ndu", "g4ndu", "l0du", "l@uda",
+}
 
 LEET_MAP = str.maketrans({
-    "0": "o", "1": "i", "3": "e", "4": "a", "5": "s",
-    "7": "t", "@": "a", "$": "s",
+    "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t",
+    "@": "a", "$": "s", "!": "i", "*": "i",
 })
 
 
@@ -35,19 +43,28 @@ def normalize(text: str) -> str:
 def is_vulgar(text: str) -> bool:
     normalized = normalize(text)
     compact = normalized.replace(" ", "")
-    for pattern in VULGAR_PATTERNS:
-        if re.search(pattern, normalized):
+
+    # Exact/phrase matching after normalisation.
+    for term in VULGAR_TERMS:
+        term_normalized = normalize(term)
+        if not term_normalized:
+            continue
+        if " " in term_normalized:
+            if term_normalized in normalized:
+                return True
+        elif re.search(rf"(?<![a-z]){re.escape(term_normalized)}(?![a-z])", normalized):
             return True
-    # Catch profanity split by spaces/punctuation, while keeping the list explicit.
-    compact_patterns = [
-        "madarchod", "madar chod", "behenchod", "bhenchod",
-        "chutiya", "gandu", "bhosdike", "bhosdi", "haramzada",
-        "haramzade", "lavda", "lavde", "lund", "gaand", "chodu",
-    ]
-    return any(p.replace(" ", "") in compact for p in compact_patterns)
+
+    # Catch terms deliberately written with spaces/punctuation between letters.
+    compact_terms = {
+        normalize(term).replace(" ", "")
+        for term in VULGAR_TERMS
+        if normalize(term).replace(" ", "")
+    }
+    return any(term in compact for term in compact_terms)
 
 
-async def _warn(member: discord.Member, guild: discord.Guild, channel: discord.abc.Messageable):
+async def _warn(member: discord.Member, guild: discord.Guild):
     config = get_server(guild.id)
     warnings = config.setdefault("moderation_warnings", {})
     user_id = str(member.id)
@@ -66,12 +83,10 @@ def setup(bot: commands.Bot):
 
         try:
             await message.delete()
-        except (discord.Forbidden, discord.NotFound):
-            return
-        except discord.HTTPException:
+        except (discord.Forbidden, discord.NotFound, discord.HTTPException):
             return
 
-        warning_count = await _warn(message.author, message.guild, message.channel)
+        warning_count = await _warn(message.author, message.guild)
 
         try:
             await message.channel.send(
