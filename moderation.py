@@ -5,63 +5,103 @@ from discord.ext import commands
 
 from config import get_server, save_server
 
-# Hindi/Hinglish abusive-word variants supplied for Shade moderation.
-# Text is normalised first so spacing, punctuation and common leetspeak are caught.
-VULGAR_TERMS = {
+# Exact short abbreviations. These are matched as complete tokens only.
+BANNED_ABBREVIATIONS = {
+    "mc", "m c", "m.c", "bc", "b c", "b.c", "bkl", "b k l", "bklol"
+}
+
+# Longer terms are also matched as complete words/phrases after normalisation.
+BANNED_TERMS = {
     "bsdk", "bhosdike", "bhosdi ke", "bhosdikey", "bhosadike", "bhosda",
-    "bhosdi", "bhosdiwala", "mc", "m c", "madarchod", "madar chod",
-    "madarchuda", "madarchudi", "madarchut", "bc", "b c", "behenchod",
-    "behen chod", "bhenchod", "bhen chod", "behen ch*d", "bhen ch*d",
-    "chutiya", "chutiye", "chutia", "chuti", "chutiyapa", "chutiyapanti",
-    "chutmarike", "chut mari ke", "gandu", "gaand", "gand", "gandfat",
-    "gaandfat", "gand mara", "gaand mara", "gand marao", "randi", "rand",
-    "randwa", "randi ka", "randi ke", "randi khana", "harami", "haraami",
-    "haramzada", "haramzade", "haramkhor", "kamine", "kamina", "kaminey",
-    "kaminapan", "kutte", "kutta", "kutti", "kutiya", "kutte ka", "kuttiya",
-    "lodu", "lauda", "launda", "lund", "lundiya", "lund chus", "lund chusna",
-    "chakka", "hijda", "hijre", "sala", "saala", "saale", "saali",
-    "saala harami", "nalayak", "nikamma", "bakchod", "bakchodi", "bakchodi kar",
-    "bakchodiya", "bkl", "b k l", "bklol", "bklolb.h.o.s.d.i.k.e",
-    "b h o s d i k e", "bh0sdike", "bh0sd1ke", "bhosd1ke", "bhosd!ke",
-    "bhosd@ke", "m@d@rch0d", "m4d4rch0d", "m4d4rchod", "chut1ya", "chut!ya",
-    "g@ndu", "g4ndu", "l0du", "l@uda",
+    "bhosdi", "bhosdiwala", "madarchod", "madar chod", "madarchuda",
+    "madarchudi", "madarchut", "behenchod", "behen chod", "bhenchod",
+    "bhen chod", "behen ch d", "bhen ch d", "chutiya", "chutiye", "chutia",
+    "chuti", "chutiyapa", "chutiyapanti", "chutmarike", "chut mari ke",
+    "gandu", "gaand", "gand", "gandfat", "gaandfat", "gand mara",
+    "gaand mara", "gand marao", "randi", "rand", "randwa", "randi ka",
+    "randi ke", "randi khana", "harami", "haraami", "haramzada", "haramzade",
+    "haramkhor", "kamine", "kamina", "kaminey", "kaminapan", "kutte", "kutta",
+    "kutti", "kutiya", "kutte ka", "kuttiya", "lodu", "lauda", "launda", "lund",
+    "lundiya", "lund chus", "lund chusna", "chakka", "hijda", "hijre", "sala",
+    "saala", "saale", "saali", "saala harami", "nalayak", "nikamma", "bakchod",
+    "bakchodi", "bakchodi kar", "bakchodiya"
+}
+
+# Common obfuscations supplied by the user. These are normalised before matching.
+OBFUSCATED_TERMS = {
+    "bklolb.h.o.s.d.i.k.e", "b h o s d i k e", "bh0sdike", "bh0sd1ke",
+    "bhosd1ke", "bhosd!ke", "bhosd@ke", "m@d@rch0d", "m4d4rch0d",
+    "m4d4rchod", "chut1ya", "chut!ya", "g@ndu", "g4ndu", "l0du", "l@uda"
 }
 
 LEET_MAP = str.maketrans({
     "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t",
-    "@": "a", "$": "s", "!": "i", "*": "i",
+    "@": "a", "$": "s", "!": "i", "*": "i"
 })
 
 
-def normalize(text: str) -> str:
+def normalize_text(text: str) -> str:
+    """Normalise case, leetspeak, zero-width characters and punctuation."""
     text = text.lower().translate(LEET_MAP)
     text = re.sub(r"[\u200b-\u200f\u2060\ufeff]", "", text)
-    text = re.sub(r"[^a-z\s]", " ", text)
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
-def is_vulgar(text: str) -> bool:
-    normalized = normalize(text)
-    compact = normalized.replace(" ", "")
+def _token_match(text: str, terms: set[str]) -> bool:
+    """Match short/normal terms as whole tokens or complete phrases."""
+    words = text.split()
+    word_set = set(words)
 
-    # Exact/phrase matching after normalisation.
-    for term in VULGAR_TERMS:
-        term_normalized = normalize(term)
-        if not term_normalized:
+    for term in terms:
+        normal = normalize_text(term)
+        if not normal:
             continue
-        if " " in term_normalized:
-            if term_normalized in normalized:
+        if " " in normal:
+            if normal in text:
                 return True
-        elif re.search(rf"(?<![a-z]){re.escape(term_normalized)}(?![a-z])", normalized):
+        elif normal in word_set:
             return True
+    return False
 
-    # Catch terms deliberately written with spaces/punctuation between letters.
-    compact_terms = {
-        normalize(term).replace(" ", "")
-        for term in VULGAR_TERMS
-        if normalize(term).replace(" ", "")
-    }
-    return any(term in compact for term in compact_terms)
+
+def _obfuscated_token_match(text: str) -> bool:
+    """Catch deliberately separated/obfuscated forms without substring matching normal words."""
+    if _token_match(text, OBFUSCATED_TERMS):
+        return True
+
+    # Only join runs of 2-4 single-letter alphabetic tokens. This catches
+    # deliberate forms such as 'm c'/'b c'/'b h o s d i k e' while avoiding
+    # substring matching inside ordinary English words.
+    words = text.split()
+    for size in (2, 3, 4, 5, 6, 7, 8, 9):
+        for i in range(len(words) - size + 1):
+            chunk = words[i:i + size]
+            if all(len(word) == 1 for word in chunk):
+                joined = "".join(chunk)
+                if joined in {"mc", "bc", "bkl", "bsdk", "bhosdike"}:
+                    return True
+    return False
+
+
+def contains_profanity(message: str) -> bool:
+    text = normalize_text(message)
+
+    if not text:
+        return False
+
+    # Critical: mc/bc and other short terms are exact-token matches.
+    if _token_match(text, BANNED_ABBREVIATIONS):
+        return True
+
+    if _token_match(text, BANNED_TERMS):
+        return True
+
+    return _obfuscated_token_match(text)
+
+
+# Backwards-compatible name used by older code.
+is_vulgar = contains_profanity
 
 
 async def _warn(member: discord.Member, guild: discord.Guild):
@@ -78,7 +118,7 @@ def setup(bot: commands.Bot):
     async def moderation_listener(message: discord.Message):
         if message.guild is None or message.author.bot:
             return
-        if not message.content or not is_vulgar(message.content):
+        if not message.content or not contains_profanity(message.content):
             return
 
         try:
