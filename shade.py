@@ -37,12 +37,7 @@ async def king(interaction: discord.Interaction):
         await interaction.response.send_message("👑 No members found.")
         return
     chosen = random.choice(members)
-    messages = [
-        f"👑 Today's King is {chosen.mention}! Long live the King!",
-        f"🏆 The crown chooses {chosen.mention} today!",
-        f"⚔️ All hail {chosen.mention}, ruler of the server!",
-        f"🎉 {chosen.mention} has claimed the throne!"
-    ]
+    messages = [f"👑 Today's King is {chosen.mention}! Long live the King!", f"🏆 The crown chooses {chosen.mention} today!", f"⚔️ All hail {chosen.mention}, ruler of the server!", f"🎉 {chosen.mention} has claimed the throne!"]
     await interaction.response.send_message(random.choice(messages))
 
 
@@ -57,38 +52,7 @@ async def rate(interaction: discord.Interaction, member: discord.Member):
 @bot.tree.command(name="roast", description="Roast a member")
 @app_commands.describe(member="Choose a member")
 async def roast(interaction: discord.Interaction, member: discord.Member):
-    roasts = [
-        f"💀 {member.mention} donates more troops than they kill.",
-        f"🏰 {member.mention} thinks gathering counts as PvP.",
-        f"😂 {member.mention} loses castles faster than gathering nodes.",
-        f"🪦 {member.mention} is the enemy's favorite source of merit.",
-        f"🔥 {member.mention} marches so late the battle is already over.",
-        f"⚔️ {member.mention}'s immortals are on permanent vacation.",
-        f"📉 {member.mention}'s STP is just for decoration.",
-        f"🫡 {member.mention} shows up to Frost after Frost ends.",
-        f"❄️ {member.mention} thinks Frost is a farming event.",
-        f"🏹 {member.mention} attacks tiles with full confidence.",
-        f"📦 {member.mention} donates speedups to the enemy.",
-        f"🐢 {member.mention}'s march speed is measured in business days.",
-        f"😂 {member.mention} still asks where Ymir spawned.",
-        f"⚰️ {member.mention} treats KE like a sightseeing tour.",
-        f"👑 {member.mention} has never met a shield they didn't forget to use.",
-        f"📜 {member.mention} ignores alliance mail better than anyone.",
-        f"🏕️ {member.mention} has been '5 minutes away' from Frost for an hour.",
-        f"🤡 {member.mention} calls reinforcements after the castle is already burning.",
-        f"🛡️ {member.mention} protects the enemy better than the alliance.",
-        f"🏰 {member.mention}'s castle burns so often it's a landmark.",
-        f"😂 Even barbarians avoid following {member.mention}'s strategy.",
-        f"💤 {member.mention} joins Alliance Supremacy after it's finished.",
-        f"🪵 {member.mention} farms wood during Kill Event.",
-        f"📉 {member.mention}'s contribution graph needs a microscope.",
-        f"🥔 {member.mention} has the map awareness of a level 1 goblin.",
-        f"🎯 {member.mention} couldn't rally a barn door.",
-        f"💀 {member.mention} is the reason R5 keeps sending reminder mails.",
-        f"⚔️ {member.mention} loses more troops than the enemy gains points.",
-        f"🔥 {member.mention}'s greatest achievement is staying offline during every important event.",
-        f"👑 If excuses earned merit, {member.mention} would rank first."
-    ]
+    roasts = [f"💀 {member.mention} donates more troops than they kill.", f"🏰 {member.mention} thinks gathering counts as PvP.", f"😂 {member.mention} loses castles faster than gathering nodes.", f"🔥 {member.mention} marches so late the battle is already over.", f"⚔️ {member.mention}'s immortals are on permanent vacation.", f"📉 {member.mention}'s STP is just for decoration.", f"❄️ {member.mention} thinks Frost is a farming event.", f"🎯 {member.mention} couldn't rally a barn door.", f"💀 {member.mention} is the reason R5 keeps sending reminder mails.", f"👑 If excuses earned merit, {member.mention} would rank first."]
     await interaction.response.send_message(random.choice(roasts))
 
 
@@ -191,6 +155,7 @@ import malena
 import moderation
 import universal
 import community
+import info_commands
 
 events.setup(bot)
 reminders.setup(bot)
@@ -203,6 +168,7 @@ malena.setup(bot)
 moderation.setup(bot)
 universal.setup(bot)
 community.setup(bot)
+info_commands.setup(bot)
 
 
 if __name__ == "__main__":
