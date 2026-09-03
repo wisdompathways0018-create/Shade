@@ -190,6 +190,7 @@ import cor
 import malena
 import moderation
 import universal
+import community
 
 events.setup(bot)
 reminders.setup(bot)
@@ -201,6 +202,7 @@ cor.setup(bot)
 malena.setup(bot)
 moderation.setup(bot)
 universal.setup(bot)
+community.setup(bot)
 
 
 if __name__ == "__main__":
