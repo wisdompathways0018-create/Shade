@@ -16,9 +16,20 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+_universal_modules_loaded = False
+
 
 @bot.event
 async def on_ready():
+    global _universal_modules_loaded
+
+    # universal.py and community.py start background tasks. They must be
+    # initialized after Discord has created the running event loop.
+    if not _universal_modules_loaded:
+        universal.setup(bot)
+        community.setup(bot)
+        _universal_modules_loaded = True
+
     try:
         synced = await bot.tree.sync()
         print(f"✅ Synced {len(synced)} slash commands.")
@@ -165,8 +176,6 @@ supremacy.setup(bot)
 cor.setup(bot)
 malena.setup(bot)
 moderation.setup(bot)
-universal.setup(bot)
-community.setup(bot)
 
 
 if __name__ == "__main__":
