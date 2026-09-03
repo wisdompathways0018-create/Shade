@@ -121,9 +121,6 @@ def _find_warning_channel(guild: discord.Guild, config: dict) -> discord.TextCha
         if isinstance(channel, discord.TextChannel):
             return channel
 
-    # Discord channel names may contain emoji/category separators, e.g.
-    # '🛡️・warning-logs'. Match the meaningful words instead of requiring
-    # the channel name to be exactly 'warning-logs'.
     for channel in guild.text_channels:
         name = channel.name.lower()
         compact = re.sub(r"[^a-z0-9]+", " ", name).strip()
@@ -155,6 +152,30 @@ async def _warn(member: discord.Member, guild: discord.Guild):
     return warning_count, warning_id
 
 
+def _format_original_message(message: discord.Message) -> str:
+    """Return the exact offending message for the warning-log ticket."""
+    content = (message.content or "").strip()
+    attachments = "\n".join(attachment.url for attachment in message.attachments)
+
+    if content and attachments:
+        text = f"{content}\n{attachments}"
+    elif content:
+        text = content
+    elif attachments:
+        text = attachments
+    else:
+        text = "[No text content / attachment-only message]"
+
+    # Avoid accidental @everyone/@here notifications from logged content.
+    text = text.replace("@everyone", "@ everyone").replace("@here", "@ here")
+
+    # Discord embed fields are limited to 1024 characters.
+    if len(text) > 1000:
+        text = text[:997] + "..."
+
+    return text
+
+
 async def _send_warning_ticket(message: discord.Message, warning_count: int, warning_id: str):
     guild = message.guild
     if guild is None:
@@ -163,8 +184,7 @@ async def _send_warning_ticket(message: discord.Message, warning_count: int, war
     config = get_server(guild.id)
     channel = _find_warning_channel(guild, config)
 
-    # The warning ticket MUST go to the warning-log channel. If it doesn't
-    # exist, don't pretend another channel is the warning log.
+    # The ticket belongs in the warning-log channel, not the original chat.
     if channel is None:
         return False
 
@@ -180,11 +200,12 @@ async def _send_warning_ticket(message: discord.Message, warning_count: int, war
     embed.add_field(name="Messaging", value="Allowed (warning only)", inline=False)
     embed.add_field(name="Warning Count", value=str(warning_count), inline=False)
     embed.add_field(name="Command Channel", value=message.channel.mention, inline=False)
+    embed.add_field(name="Message", value=_format_original_message(message), inline=False)
     embed.add_field(name="Warning ID", value=f"`{warning_id}`", inline=False)
     embed.set_footer(text="Shade • Warning Ticket")
 
     try:
-        await channel.send(embed=embed)
+        await channel.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
         return True
     except (discord.Forbidden, discord.HTTPException):
         return False
@@ -198,7 +219,7 @@ def setup(bot: commands.Bot):
         if not message.content or not contains_profanity(message.content):
             return
 
-        # Record the warning even if message deletion fails.
+        # Keep the original Message object so its content can be logged after deletion.
         try:
             await message.delete()
         except (discord.Forbidden, discord.NotFound, discord.HTTPException):
