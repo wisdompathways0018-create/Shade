@@ -204,6 +204,10 @@ def setup(bot: commands.Bot):
     async def moderation_listener(message: discord.Message):
         if message.guild is None or message.author.bot:
             return
+        config = get_server(message.guild.id)
+        # Moderation can be disabled per server without removing the feature.
+        if config.get("moderation_enabled", True) is False:
+            return
         # Attachment-only posts and URL-only posts are never moderation text.
         if not message.content or not _text_for_moderation(message.content):
             return
@@ -217,7 +221,7 @@ def setup(bot: commands.Bot):
 
     @bot.listen("on_invite_create")
     async def invite_creation_listener(invite: discord.Invite):
-        # Log every newly-created invite. This does not delete or block the invite.
+        # Invite logging remains active even when the language filter is disabled.
         await _log_invite_created(invite)
 
     @bot.tree.command(name="warningchannel", description="Set the channel for Shade moderation logs")
@@ -233,3 +237,27 @@ def setup(bot: commands.Bot):
         config["warning_channel"] = channel.id
         save_server()
         await interaction.response.send_message(f"✅ Shade moderation logs will be sent to {channel.mention}", ephemeral=True)
+
+    @bot.tree.command(name="moderation", description="Enable or disable Shade's automatic language moderation")
+    @app_commands.describe(action="Choose whether Shade should automatically filter messages")
+    @app_commands.choices(action=[
+        app_commands.Choice(name="Enable", value="enable"),
+        app_commands.Choice(name="Disable", value="disable"),
+    ])
+    async def moderation(interaction: discord.Interaction, action: app_commands.Choice[str]):
+        if interaction.guild is None:
+            await interaction.response.send_message("❌ This command can only be used in a server.", ephemeral=True)
+            return
+        if not interaction.user.guild_permissions.manage_guild:
+            await interaction.response.send_message("❌ You need **Manage Server** permission to change Shade moderation.", ephemeral=True)
+            return
+
+        config = get_server(interaction.guild.id)
+        enabled = action.value == "enable"
+        config["moderation_enabled"] = enabled
+        save_server()
+
+        if enabled:
+            await interaction.response.send_message("✅ Shade's automatic language moderation is now **enabled**.")
+        else:
+            await interaction.response.send_message("🛑 Shade's automatic language moderation is now **disabled**. Other Shade features, including invite logging, will continue working.")
