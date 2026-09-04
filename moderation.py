@@ -162,6 +162,43 @@ async def _log_message(message: discord.Message):
         return False
 
 
+async def _log_invite_created(invite: discord.Invite):
+    guild = invite.guild
+    if guild is None:
+        return False
+    config = get_server(guild.id)
+    channel = _find_warning_channel(guild, config)
+    if channel is None:
+        return False
+
+    inviter = invite.inviter
+    inviter_text = inviter.mention if inviter else "Unknown / unavailable"
+    inviter_id = f"`{inviter.id}`" if inviter else "Unknown"
+    channel_text = invite.channel.mention if isinstance(invite.channel, discord.abc.GuildChannel) else "Unknown / unavailable"
+    max_age = f"{invite.max_age // 3600}h" if invite.max_age else "Never"
+    max_uses = str(invite.max_uses) if invite.max_uses else "Unlimited"
+
+    embed = discord.Embed(
+        title="🔗 Invite Created",
+        description="A new Discord invite was created in this server.",
+        color=discord.Color.blue(),
+        timestamp=discord.utils.utcnow(),
+    )
+    embed.add_field(name="Created By", value=inviter_text, inline=True)
+    embed.add_field(name="User ID", value=inviter_id, inline=True)
+    embed.add_field(name="Channel", value=channel_text, inline=True)
+    embed.add_field(name="Invite", value=f"`{invite.url}`", inline=False)
+    embed.add_field(name="Expires", value=max_age, inline=True)
+    embed.add_field(name="Max Uses", value=max_uses, inline=True)
+    embed.set_footer(text="Shade • Moderation Log • Invite Creation")
+
+    try:
+        await channel.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+        return True
+    except (discord.Forbidden, discord.HTTPException):
+        return False
+
+
 def setup(bot: commands.Bot):
     @bot.listen("on_message")
     async def moderation_listener(message: discord.Message):
@@ -177,6 +214,11 @@ def setup(bot: commands.Bot):
         except (discord.Forbidden, discord.NotFound, discord.HTTPException):
             pass
         await _log_message(message)
+
+    @bot.listen("on_invite_create")
+    async def invite_creation_listener(invite: discord.Invite):
+        # Log every newly-created invite. This does not delete or block the invite.
+        await _log_invite_created(invite)
 
     @bot.tree.command(name="warningchannel", description="Set the channel for Shade moderation logs")
     @app_commands.describe(channel="Select the warning log channel")
