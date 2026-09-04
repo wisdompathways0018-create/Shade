@@ -8,7 +8,6 @@ from discord.ext import commands
 
 from config import get_server, save_server
 
-# Exact short abbreviations. These are matched as complete tokens only.
 BANNED_ABBREVIATIONS = {
     "mc", "m c", "m.c", "bc", "b c", "b.c", "bkl", "b k l", "bklol"
 }
@@ -40,12 +39,21 @@ LEET_MAP = str.maketrans({
     "@": "a", "$": "s", "!": "i", "*": "i"
 })
 
+URL_RE = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
+
 
 def normalize_text(text: str) -> str:
     text = text.lower().translate(LEET_MAP)
     text = re.sub(r"[\u200b-\u200f\u2060\ufeff]", "", text)
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _text_for_moderation(message: str) -> str:
+    # Never inspect URL domains/paths for profanity. A GIF/image/video URL is
+    # not a user's language and must not be capable of triggering the filter.
+    without_urls = URL_RE.sub(" ", message or "")
+    return normalize_text(without_urls)
 
 
 def _token_match(text: str, terms: set[str]) -> bool:
@@ -66,7 +74,6 @@ def _token_match(text: str, terms: set[str]) -> bool:
 def _obfuscated_token_match(text: str) -> bool:
     if _token_match(text, OBFUSCATED_TERMS):
         return True
-
     words = text.split()
     for size in (2, 3, 4, 5, 6, 7, 8, 9):
         for i in range(len(words) - size + 1):
@@ -79,14 +86,14 @@ def _obfuscated_token_match(text: str) -> bool:
 
 
 def contains_profanity(message: str) -> bool:
-    text = normalize_text(message)
+    text = _text_for_moderation(message)
     if not text:
         return False
-    if _token_match(text, BANNED_ABBREVIATIONS):
-        return True
-    if _token_match(text, BANNED_TERMS):
-        return True
-    return _obfuscated_token_match(text)
+    return (
+        _token_match(text, BANNED_ABBREVIATIONS)
+        or _token_match(text, BANNED_TERMS)
+        or _obfuscated_token_match(text)
+    )
 
 
 is_vulgar = contains_profanity
@@ -103,10 +110,8 @@ def _find_warning_channel(guild: discord.Guild, config: dict) -> discord.TextCha
         channel = guild.get_channel(channel_id)
         if isinstance(channel, discord.TextChannel):
             return channel
-
     for channel in guild.text_channels:
-        name = channel.name.lower()
-        compact = re.sub(r"[^a-z0-9]+", " ", name).strip()
+        compact = re.sub(r"[^a-z0-9]+", " ", channel.name.lower()).strip()
         if "warning" in compact and "log" in compact:
             return channel
     return None
@@ -115,7 +120,6 @@ def _find_warning_channel(guild: discord.Guild, config: dict) -> discord.TextCha
 def _format_original_message(message: discord.Message) -> str:
     content = (message.content or "").strip()
     attachments = "\n".join(attachment.url for attachment in message.attachments)
-
     if content and attachments:
         text = f"{content}\n{attachments}"
     elif content:
@@ -124,7 +128,6 @@ def _format_original_message(message: discord.Message) -> str:
         text = attachments
     else:
         text = "[No text content / attachment-only message]"
-
     text = text.replace("@everyone", "@ everyone").replace("@here", "@ here")
     if len(text) > 1000:
         text = text[:997] + "..."
@@ -135,18 +138,16 @@ async def _log_message(message: discord.Message):
     guild = message.guild
     if guild is None:
         return False
-
     config = get_server(guild.id)
     channel = _find_warning_channel(guild, config)
     if channel is None:
         return False
-
     log_id = _make_log_id()
     embed = discord.Embed(
         title="Message Logged",
         description="A message was removed by Shade's language filter and logged for leadership review.",
         color=discord.Color.orange(),
-        timestamp=discord.utils.utcnow()
+        timestamp=discord.utils.utcnow(),
     )
     embed.add_field(name="Member", value=message.author.mention, inline=False)
     embed.add_field(name="Logged By", value=guild.me.mention if guild.me else "Shade", inline=False)
@@ -154,7 +155,6 @@ async def _log_message(message: discord.Message):
     embed.add_field(name="Message", value=_format_original_message(message), inline=False)
     embed.add_field(name="Log ID", value=f"`{log_id}`", inline=False)
     embed.set_footer(text="Shade • Moderation Log • No warning issued")
-
     try:
         await channel.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
         return True
@@ -167,37 +167,27 @@ def setup(bot: commands.Bot):
     async def moderation_listener(message: discord.Message):
         if message.guild is None or message.author.bot:
             return
-        if not message.content or not contains_profanity(message.content):
+        # Attachment-only posts and URL-only posts are never moderation text.
+        if not message.content or not _text_for_moderation(message.content):
             return
-
-        # Remove the offending message, but DO NOT warn, timeout, or reply to the member.
+        if not contains_profanity(message.content):
+            return
         try:
             await message.delete()
         except (discord.Forbidden, discord.NotFound, discord.HTTPException):
             pass
-
         await _log_message(message)
 
     @bot.tree.command(name="warningchannel", description="Set the channel for Shade moderation logs")
     @app_commands.describe(channel="Select the warning log channel")
     async def warningchannel(interaction: discord.Interaction, channel: discord.TextChannel):
         if interaction.guild is None:
-            await interaction.response.send_message(
-                "❌ This command can only be used in a server.", ephemeral=True
-            )
+            await interaction.response.send_message("❌ This command can only be used in a server.", ephemeral=True)
             return
-
         if not interaction.user.guild_permissions.manage_guild:
-            await interaction.response.send_message(
-                "❌ You need **Manage Server** permission to set the warning channel.",
-                ephemeral=True
-            )
+            await interaction.response.send_message("❌ You need **Manage Server** permission to set the warning channel.", ephemeral=True)
             return
-
         config = get_server(interaction.guild.id)
         config["warning_channel"] = channel.id
         save_server()
-        await interaction.response.send_message(
-            f"✅ Shade moderation logs will be sent to {channel.mention}",
-            ephemeral=True
-        )
+        await interaction.response.send_message(f"✅ Shade moderation logs will be sent to {channel.mention}", ephemeral=True)
