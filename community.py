@@ -103,7 +103,7 @@ def setup(bot: commands.Bot):
         lines = []
         for i, (xp, member) in enumerate(rows[:10], 1):
             lvl = int(config["levels"][str(member.id)].get("level", 0))
-            lines.append(f"**{i}.** {member.mention} — Level **{lvl}** • {xp} XP")
+            lines.append(f"**{i}.** {member.display_name} — Level **{lvl}** • {xp} XP")
         embed = discord.Embed(title="🏆 Shade XP Leaderboard", description="\n".join(lines) or "No XP recorded yet.", color=discord.Color.gold())
         await interaction.response.send_message(embed=embed)
 
@@ -244,7 +244,7 @@ def setup(bot: commands.Bot):
                 channel_id = config.get("level_channel")
                 channel = message.guild.get_channel(channel_id) if channel_id else message.channel
                 if isinstance(channel, discord.TextChannel):
-                    await channel.send(f"🎉 Congratulations {message.author.mention}! You reached **Level {new_level}**!")
+                    await channel.send(f"🎉 Congratulations {message.author.display_name}! You reached **Level {new_level}**!")
             save_server()
 
     @bot.listen("on_raw_reaction_add")
