@@ -57,6 +57,7 @@ def _text_for_moderation(message: str) -> str:
 
 
 def _token_match(text: str, terms: set[str]) -> bool:
+    """Match complete words/phrases only; never match a banned word inside another word."""
     words = text.split()
     word_set = set(words)
     for term in terms:
@@ -64,7 +65,8 @@ def _token_match(text: str, terms: set[str]) -> bool:
         if not normal:
             continue
         if " " in normal:
-            if normal in text:
+            # Match complete phrase boundaries, not arbitrary substrings.
+            if re.search(rf"(?<![a-z0-9]){re.escape(normal)}(?![a-z0-9])", text):
                 return True
         elif normal in word_set:
             return True
