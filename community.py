@@ -15,11 +15,15 @@ XP_COOLDOWN = 15
 XP_MIN = 10
 XP_MAX = 20
 XP_PER_LEVEL = 100
+XP_LEVEL_LOCKS = {}
 
 
 def _level_from_xp(xp: int) -> int:
-    """Always derive the member's level from their actual XP."""
-    return max(0, int(xp) // XP_PER_LEVEL)
+    """Derive a stable, human-friendly level from XP.
+
+    Members start at Level 1. Every 100 XP advances them by one level.
+    """
+    return max(1, int(xp) // XP_PER_LEVEL + 1)
 
 
 class SuggestionView(discord.ui.View):
@@ -91,14 +95,12 @@ def setup(bot: commands.Bot):
         member = member or interaction.user
         config = get_server(interaction.guild.id)
         data = config.get("levels", {}).get(str(member.id), {})
-        xp = int(data.get("xp", 0))
-        # Calculate the displayed level from XP so stale stored level values
-        # can never leave a member permanently showing Level 1.
+        xp = max(0, int(data.get("xp", 0)))
         lvl = _level_from_xp(xp)
         if int(data.get("level", -1)) != lvl:
             data["level"] = lvl
             save_server()
-        next_xp = (lvl + 1) * XP_PER_LEVEL
+        next_xp = lvl * XP_PER_LEVEL
         embed = discord.Embed(title="📈 Shade Level", color=discord.Color.blurple())
         embed.add_field(name="Member", value=member.mention, inline=False)
         embed.add_field(name="Level", value=str(lvl), inline=True)
@@ -114,7 +116,7 @@ def setup(bot: commands.Bot):
         for uid, data in levels.items():
             member = interaction.guild.get_member(int(uid))
             if member and not member.bot:
-                xp = int(data.get("xp", 0))
+                xp = max(0, int(data.get("xp", 0)))
                 lvl = _level_from_xp(xp)
                 if int(data.get("level", -1)) != lvl:
                     data["level"] = lvl
@@ -254,9 +256,13 @@ def setup(bot: commands.Bot):
 
         now = time.time()
         levels = config.setdefault("levels", {})
-        data = levels.setdefault(author_key, {"xp": 0, "level": 0, "last_xp": 0})
-        if now - float(data.get("last_xp", 0)) >= XP_COOLDOWN:
-            current_xp = int(data.get("xp", 0))
+        data = levels.setdefault(author_key, {"xp": 0, "level": 1, "last_xp": 0})
+        lock = XP_LEVEL_LOCKS.setdefault((message.guild.id, message.author.id), asyncio.Lock())
+        async with lock:
+            now = time.time()
+            if now - float(data.get("last_xp", 0)) < XP_COOLDOWN:
+                return
+            current_xp = max(0, int(data.get("xp", 0)))
             old_level = _level_from_xp(current_xp)
             gain = random.randint(XP_MIN, XP_MAX)
             new_xp = current_xp + gain
