@@ -9,23 +9,6 @@ from discord.ext import commands
 from config import get_server, save_server
 
 
-# Award XP often enough that active members can progress, while still
-# preventing rapid-fire message spam from farming unlimited XP.
-XP_COOLDOWN = 15
-XP_MIN = 10
-XP_MAX = 20
-XP_PER_LEVEL = 100
-XP_LEVEL_LOCKS = {}
-
-
-def _level_from_xp(xp: int) -> int:
-    """Derive a stable, human-friendly level from XP.
-
-    Members start at Level 1. Every 100 XP advances them by one level.
-    """
-    return max(1, int(xp) // XP_PER_LEVEL + 1)
-
-
 class SuggestionView(discord.ui.View):
     def __init__(self, suggestion_id: str):
         super().__init__(timeout=None)
@@ -58,11 +41,6 @@ class SuggestionView(discord.ui.View):
         await self._update(interaction, "Rejected", "❌")
 
 
-class StarboardListener:
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-
-
 async def _birthday_loop(bot: commands.Bot):
     await bot.wait_until_ready()
     while not bot.is_closed():
@@ -88,81 +66,6 @@ async def _birthday_loop(bot: commands.Bot):
 
 def setup(bot: commands.Bot):
     bot.add_view(SuggestionView("persistent"))
-
-    @bot.tree.command(name="level", description="Show a member's Shade level")
-    @app_commands.describe(member="Member to check")
-    async def level(interaction: discord.Interaction, member: discord.Member | None = None):
-        member = member or interaction.user
-        config = get_server(interaction.guild.id)
-        data = config.get("levels", {}).get(str(member.id), {})
-        xp = max(0, int(data.get("xp", 0)))
-        lvl = _level_from_xp(xp)
-        if int(data.get("level", -1)) != lvl:
-            data["level"] = lvl
-            save_server()
-        next_xp = lvl * XP_PER_LEVEL
-        embed = discord.Embed(title="📈 Shade Level", color=discord.Color.blurple())
-        embed.add_field(name="Member", value=member.mention, inline=False)
-        embed.add_field(name="Level", value=str(lvl), inline=True)
-        embed.add_field(name="XP", value=f"{xp}/{next_xp}", inline=True)
-        await interaction.response.send_message(embed=embed)
-
-    @bot.tree.command(name="leaderboard", description="Show the server XP leaderboard")
-    async def leaderboard(interaction: discord.Interaction):
-        config = get_server(interaction.guild.id)
-        levels = config.get("levels", {})
-        rows = []
-        changed = False
-        for uid, data in levels.items():
-            member = interaction.guild.get_member(int(uid))
-            if member and not member.bot:
-                xp = max(0, int(data.get("xp", 0)))
-                lvl = _level_from_xp(xp)
-                if int(data.get("level", -1)) != lvl:
-                    data["level"] = lvl
-                    changed = True
-                rows.append((xp, lvl, member))
-        if changed:
-            save_server()
-        rows.sort(key=lambda x: x[0], reverse=True)
-        lines = []
-        for i, (xp, lvl, member) in enumerate(rows[:10], 1):
-            lines.append(f"**{i}.** {member.display_name} — Level **{lvl}** • {xp} XP")
-        embed = discord.Embed(title="🏆 Shade XP Leaderboard", description="\n".join(lines) or "No XP recorded yet.", color=discord.Color.gold())
-        await interaction.response.send_message(embed=embed)
-
-    @bot.tree.command(name="levelchannel", description="Set the channel for level-up announcements")
-    @app_commands.describe(channel="Level-up announcement channel")
-    async def levelchannel(interaction: discord.Interaction, channel: discord.TextChannel):
-        if interaction.guild is None or not interaction.user.guild_permissions.manage_guild:
-            return await interaction.response.send_message("❌ You need Manage Server permission.", ephemeral=True)
-        config = get_server(interaction.guild.id)
-        config["level_channel"] = channel.id
-        save_server()
-        await interaction.response.send_message(f"✅ Level-up announcements will use {channel.mention}", ephemeral=True)
-
-    @bot.tree.command(name="starboardchannel", description="Set the Starboard channel")
-    @app_commands.describe(channel="Channel for popular messages")
-    async def starboardchannel(interaction: discord.Interaction, channel: discord.TextChannel):
-        if interaction.guild is None or not interaction.user.guild_permissions.manage_guild:
-            return await interaction.response.send_message("❌ You need Manage Server permission.", ephemeral=True)
-        config = get_server(interaction.guild.id)
-        config["starboard_channel"] = channel.id
-        config.setdefault("starboard", {})
-        save_server()
-        await interaction.response.send_message(f"⭐ Starboard set to {channel.mention}", ephemeral=True)
-
-    @bot.tree.command(name="starboardthreshold", description="Set how many ⭐ reactions a message needs")
-    @app_commands.describe(count="Stars required (1-25)")
-    async def starboardthreshold(interaction: discord.Interaction, count: int):
-        if interaction.guild is None or not interaction.user.guild_permissions.manage_guild:
-            return await interaction.response.send_message("❌ You need Manage Server permission.", ephemeral=True)
-        if not 1 <= count <= 25:
-            return await interaction.response.send_message("❌ Choose 1-25.", ephemeral=True)
-        config = get_server(interaction.guild.id)
-        config["starboard_threshold"] = count
-        save_server()
-        await interaction.response.send_message(f"⭐ Starboard threshold: **{count}**", ephemeral=True)
 
     @bot.tree.command(name="suggest", description="Submit a server suggestion")
     @app_commands.describe(text="Your suggestion")
@@ -253,29 +156,6 @@ def setup(bot: commands.Bot):
             data = afks.get(str(mentioned.id))
             if data:
                 await message.channel.send(f"💤 {mentioned.display_name} is AFK: **{data.get('reason', 'AFK')}**", delete_after=8)
-
-        now = time.time()
-        levels = config.setdefault("levels", {})
-        data = levels.setdefault(author_key, {"xp": 0, "level": 1, "last_xp": 0})
-        lock = XP_LEVEL_LOCKS.setdefault((message.guild.id, message.author.id), asyncio.Lock())
-        async with lock:
-            now = time.time()
-            if now - float(data.get("last_xp", 0)) < XP_COOLDOWN:
-                return
-            current_xp = max(0, int(data.get("xp", 0)))
-            old_level = _level_from_xp(current_xp)
-            gain = random.randint(XP_MIN, XP_MAX)
-            new_xp = current_xp + gain
-            new_level = _level_from_xp(new_xp)
-            data["xp"] = new_xp
-            data["level"] = new_level
-            data["last_xp"] = now
-            if new_level > old_level:
-                channel_id = config.get("level_channel")
-                channel = message.guild.get_channel(channel_id) if channel_id else message.channel
-                if isinstance(channel, discord.TextChannel):
-                    await channel.send(f"🎉 Congratulations {message.author.display_name}! You reached **Level {new_level}**!")
-            save_server()
 
     @bot.listen("on_raw_reaction_add")
     async def starboard_listener(payload: discord.RawReactionActionEvent):
