@@ -9,7 +9,17 @@ from discord.ext import commands
 from config import get_server, save_server
 
 
-XP_COOLDOWN = 60
+# Award XP often enough that active members can progress, while still
+# preventing rapid-fire message spam from farming unlimited XP.
+XP_COOLDOWN = 15
+XP_MIN = 10
+XP_MAX = 20
+XP_PER_LEVEL = 100
+
+
+def _level_from_xp(xp: int) -> int:
+    """Always derive the member's level from their actual XP."""
+    return max(0, int(xp) // XP_PER_LEVEL)
 
 
 class SuggestionView(discord.ui.View):
@@ -82,8 +92,13 @@ def setup(bot: commands.Bot):
         config = get_server(interaction.guild.id)
         data = config.get("levels", {}).get(str(member.id), {})
         xp = int(data.get("xp", 0))
-        lvl = int(data.get("level", 0))
-        next_xp = (lvl + 1) * 100
+        # Calculate the displayed level from XP so stale stored level values
+        # can never leave a member permanently showing Level 1.
+        lvl = _level_from_xp(xp)
+        if int(data.get("level", -1)) != lvl:
+            data["level"] = lvl
+            save_server()
+        next_xp = (lvl + 1) * XP_PER_LEVEL
         embed = discord.Embed(title="📈 Shade Level", color=discord.Color.blurple())
         embed.add_field(name="Member", value=member.mention, inline=False)
         embed.add_field(name="Level", value=str(lvl), inline=True)
@@ -95,14 +110,21 @@ def setup(bot: commands.Bot):
         config = get_server(interaction.guild.id)
         levels = config.get("levels", {})
         rows = []
+        changed = False
         for uid, data in levels.items():
             member = interaction.guild.get_member(int(uid))
             if member and not member.bot:
-                rows.append((int(data.get("xp", 0)), member))
+                xp = int(data.get("xp", 0))
+                lvl = _level_from_xp(xp)
+                if int(data.get("level", -1)) != lvl:
+                    data["level"] = lvl
+                    changed = True
+                rows.append((xp, lvl, member))
+        if changed:
+            save_server()
         rows.sort(key=lambda x: x[0], reverse=True)
         lines = []
-        for i, (xp, member) in enumerate(rows[:10], 1):
-            lvl = int(config["levels"][str(member.id)].get("level", 0))
+        for i, (xp, lvl, member) in enumerate(rows[:10], 1):
             lines.append(f"**{i}.** {member.display_name} — Level **{lvl}** • {xp} XP")
         embed = discord.Embed(title="🏆 Shade XP Leaderboard", description="\n".join(lines) or "No XP recorded yet.", color=discord.Color.gold())
         await interaction.response.send_message(embed=embed)
@@ -195,7 +217,7 @@ def setup(bot: commands.Bot):
         await interaction.response.send_message(f"🎂 Birthday saved as **{normalized}**.", ephemeral=True)
 
     @bot.tree.command(name="birthdaychannel", description="Set the birthday announcement channel")
-    @app_commands.describe(channel="Birthday channel")
+    @app_commands.describe(channel="Birthday announcement channel")
     async def birthdaychannel(interaction: discord.Interaction, channel: discord.TextChannel):
         if interaction.guild is None or not interaction.user.guild_permissions.manage_guild:
             return await interaction.response.send_message("❌ You need Manage Server permission.", ephemeral=True)
@@ -234,10 +256,12 @@ def setup(bot: commands.Bot):
         levels = config.setdefault("levels", {})
         data = levels.setdefault(author_key, {"xp": 0, "level": 0, "last_xp": 0})
         if now - float(data.get("last_xp", 0)) >= XP_COOLDOWN:
-            gain = random.randint(8, 15)
-            data["xp"] = int(data.get("xp", 0)) + gain
-            old_level = int(data.get("level", 0))
-            new_level = int(data["xp"] // 100)
+            current_xp = int(data.get("xp", 0))
+            old_level = _level_from_xp(current_xp)
+            gain = random.randint(XP_MIN, XP_MAX)
+            new_xp = current_xp + gain
+            new_level = _level_from_xp(new_xp)
+            data["xp"] = new_xp
             data["level"] = new_level
             data["last_xp"] = now
             if new_level > old_level:
