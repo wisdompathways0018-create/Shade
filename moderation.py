@@ -8,8 +8,10 @@ from discord.ext import commands
 
 from config import get_server, save_server
 
+# Short abbreviations such as "bc" and "mc" are intentionally excluded.
+# They are common legitimate text and caused false positives.
 BANNED_ABBREVIATIONS = {
-    "mc", "m c", "m.c", "bc", "b c", "b.c", "bkl", "b k l", "bklol"
+    "bkl", "b k l", "bklol"
 }
 
 BANNED_TERMS = {
@@ -65,7 +67,6 @@ def _token_match(text: str, terms: set[str]) -> bool:
         if not normal:
             continue
         if " " in normal:
-            # Match complete phrase boundaries, not arbitrary substrings.
             if re.search(rf"(?<![a-z0-9]){re.escape(normal)}(?![a-z0-9])", text):
                 return True
         elif normal in word_set:
@@ -77,12 +78,12 @@ def _obfuscated_token_match(text: str) -> bool:
     if _token_match(text, OBFUSCATED_TERMS):
         return True
     words = text.split()
-    for size in (2, 3, 4, 5, 6, 7, 8, 9):
+    for size in (3, 4, 5, 6, 7, 8, 9):
         for i in range(len(words) - size + 1):
             chunk = words[i:i + size]
             if all(len(word) == 1 for word in chunk):
                 joined = "".join(chunk)
-                if joined in {"mc", "bc", "bkl", "bsdk", "bhosdike"}:
+                if joined in {"bkl", "bsdk", "bhosdike"}:
                     return True
     return False
 
@@ -207,10 +208,8 @@ def setup(bot: commands.Bot):
         if message.guild is None or message.author.bot:
             return
         config = get_server(message.guild.id)
-        # Moderation can be disabled per server without removing the feature.
         if config.get("moderation_enabled", True) is False:
             return
-        # Attachment-only posts and URL-only posts are never moderation text.
         if not message.content or not _text_for_moderation(message.content):
             return
         if not contains_profanity(message.content):
@@ -223,7 +222,6 @@ def setup(bot: commands.Bot):
 
     @bot.listen("on_invite_create")
     async def invite_creation_listener(invite: discord.Invite):
-        # Invite logging remains active even when the language filter is disabled.
         await _log_invite_created(invite)
 
     @bot.tree.command(name="warningchannel", description="Set the channel for Shade moderation logs")
