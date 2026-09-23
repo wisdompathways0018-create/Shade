@@ -15,7 +15,7 @@ BANNED_ABBREVIATIONS = {
 }
 
 BANNED_TERMS = {
-    "bsdk", "bhosdike", "bhosdi ke", "bhosdikey", "bhosadike", "bhosda",
+    "nigga", "bsdk", "bhosdike", "bhosdi ke", "bhosdikey", "bhosadike", "bhosda",
     "bhosdi", "bhosdiwala", "madarchod", "madar chod", "madarchuda",
     "madarchudi", "madarchut", "behenchod", "behen chod", "bhenchod",
     "bhen chod", "behen ch d", "bhen ch d", "chutiya", "chutiye", "chutia",
