@@ -29,6 +29,7 @@ async def on_ready():
     if not _universal_modules_loaded:
         universal.setup(bot)
         community.setup(bot)
+        bot.add_view(TruthDareView())
         _universal_modules_loaded = True
 
     try:
@@ -121,6 +122,70 @@ DARE_PROMPTS = [
     "Describe your current mood using only a movie title.",
     "Challenge someone to a friendly /roast battle.",
 ]
+
+
+def _truth_dare_embed(interaction: discord.Interaction, prompt_type: str, prompt: str) -> discord.Embed:
+    if prompt_type == "TRUTH":
+        color = discord.Color.green()
+        emoji = "🟢"
+    elif prompt_type == "DARE":
+        color = discord.Color.red()
+        emoji = "🔴"
+    else:
+        color = discord.Color.blurple()
+        emoji = "🎲"
+
+    embed = discord.Embed(
+        title=f"{emoji} {prompt}",
+        color=color,
+    )
+    embed.set_footer(text=f"Type: {prompt_type} • Requested by {interaction.user.display_name}")
+    embed.set_author(
+        name=f"Requested by {interaction.user.display_name}",
+        icon_url=interaction.user.display_avatar.url,
+    )
+    return embed
+
+
+class TruthDareView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    async def _send_prompt(self, interaction: discord.Interaction, prompt_type: str):
+        if prompt_type == "TRUTH":
+            prompt = random.choice(TRUTH_PROMPTS)
+        elif prompt_type == "DARE":
+            prompt = random.choice(DARE_PROMPTS)
+        else:
+            prompt_type = random.choice(["TRUTH", "DARE"])
+            prompt = random.choice(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS)
+
+        await interaction.response.edit_message(
+            embed=_truth_dare_embed(interaction, prompt_type, prompt),
+            view=self,
+        )
+
+    @discord.ui.button(label="Truth", emoji="🟢", style=discord.ButtonStyle.success, custom_id="shade:truthdare:truth")
+    async def truth_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._send_prompt(interaction, "TRUTH")
+
+    @discord.ui.button(label="Dare", emoji="🔴", style=discord.ButtonStyle.danger, custom_id="shade:truthdare:dare")
+    async def dare_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._send_prompt(interaction, "DARE")
+
+    @discord.ui.button(label="Random", emoji="🎲", style=discord.ButtonStyle.primary, custom_id="shade:truthdare:random")
+    async def random_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._send_prompt(interaction, "RANDOM")
+
+
+@bot.tree.command(name="truthdare", description="Start a Truth or Dare game")
+async def truthdare(interaction: discord.Interaction):
+    prompt_type = random.choice(["TRUTH", "DARE"])
+    prompt = random.choice(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS)
+    await interaction.response.send_message(
+        embed=_truth_dare_embed(interaction, prompt_type, prompt),
+        view=TruthDareView(),
+    )
 
 
 @bot.tree.command(name="truth", description="Get a random Truth question")
