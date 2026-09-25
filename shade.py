@@ -67,13 +67,20 @@ async def rate(interaction: discord.Interaction, member: discord.Member):
 _roast_bags: dict[tuple[int, int], list[int]] = {}
 _truth_bags: dict[int, list[int]] = {}
 _dare_bags: dict[int, list[int]] = {}
+_last_truth: dict[int, int] = {}
+_last_dare: dict[int, int] = {}
 
-def _next_prompt(prompts: list[str], bags: dict[int, list[int]], guild_id: int) -> str:
+def _next_prompt(prompts: list[str], bags: dict[int, list[int]], last_used: dict[int, int], guild_id: int) -> str:
     bag = bags.setdefault(guild_id, [])
     if not bag:
         bag.extend(range(len(prompts)))
         random.shuffle(bag)
-    return prompts[bag.pop()]
+        previous = last_used.get(guild_id)
+        if previous is not None and len(bag) > 1 and bag[-1] == previous:
+            bag[-1], bag[-2] = bag[-2], bag[-1]
+    selected = bag.pop()
+    last_used[guild_id] = selected
+    return prompts[selected]
 
 
 
@@ -256,12 +263,12 @@ class TruthDareView(discord.ui.View):
 
     async def _send_prompt(self, interaction: discord.Interaction, prompt_type: str):
         if prompt_type == "TRUTH":
-            prompt = _next_prompt(TRUTH_PROMPTS, _truth_bags, interaction.guild.id if interaction.guild else 0)
+            prompt = _next_prompt(TRUTH_PROMPTS, _truth_bags, _last_truth, interaction.guild.id if interaction.guild else 0)
         elif prompt_type == "DARE":
-            prompt = _next_prompt(DARE_PROMPTS, _dare_bags, interaction.guild.id if interaction.guild else 0)
+            prompt = _next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, interaction.guild.id if interaction.guild else 0)
         else:
             prompt_type = random.choice(["TRUTH", "DARE"])
-            prompt = _next_prompt(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS, _truth_bags if prompt_type == "TRUTH" else _dare_bags, interaction.guild.id if interaction.guild else 0)
+            prompt = _next_prompt(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS, _truth_bags if prompt_type == "TRUTH" else _dare_bags, _last_truth if prompt_type == "TRUTH" else _last_dare, interaction.guild.id if interaction.guild else 0)
 
         await interaction.response.edit_message(
             embed=_truth_dare_embed(interaction, prompt_type, prompt),
@@ -284,7 +291,7 @@ class TruthDareView(discord.ui.View):
 @bot.tree.command(name="truthdare", description="Start a Truth or Dare game")
 async def truthdare(interaction: discord.Interaction):
     prompt_type = random.choice(["TRUTH", "DARE"])
-    prompt = random.choice(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS)
+    prompt = _next_prompt(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS, _truth_bags if prompt_type == "TRUTH" else _dare_bags, _last_truth if prompt_type == "TRUTH" else _last_dare, interaction.guild.id if interaction.guild else 0)
     await interaction.response.send_message(
         embed=_truth_dare_embed(interaction, prompt_type, prompt),
         view=TruthDareView(),
@@ -293,12 +300,12 @@ async def truthdare(interaction: discord.Interaction):
 
 @bot.tree.command(name="truth", description="Get a random Truth question")
 async def truth(interaction: discord.Interaction):
-    await interaction.response.send_message(f"🟢 **Truth:** {random.choice(TRUTH_PROMPTS)}")
+    await interaction.response.send_message(f"🟢 **Truth:** {_next_prompt(TRUTH_PROMPTS, _truth_bags, _last_truth, interaction.guild.id if interaction.guild else 0)}")
 
 
 @bot.tree.command(name="dare", description="Get a random Dare challenge")
 async def dare(interaction: discord.Interaction):
-    await interaction.response.send_message(f"🔴 **Dare:** {random.choice(DARE_PROMPTS)}")
+    await interaction.response.send_message(f"🔴 **Dare:** {_next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, interaction.guild.id if interaction.guild else 0)}")
 
 
 @bot.tree.command(name="alliance", description="Set your alliance name")
