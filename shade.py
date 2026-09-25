@@ -270,7 +270,7 @@ class TruthDareView(discord.ui.View):
             prompt_type = random.choice(["TRUTH", "DARE"])
             prompt = _next_prompt(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS, _truth_bags if prompt_type == "TRUTH" else _dare_bags, _last_truth if prompt_type == "TRUTH" else _last_dare, interaction.guild.id if interaction.guild else 0)
 
-        await interaction.response.edit_message(
+        await interaction.response.send_message(
             embed=_truth_dare_embed(interaction, prompt_type, prompt),
             view=self,
         )
