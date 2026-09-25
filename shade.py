@@ -92,6 +92,47 @@ async def roast(interaction: discord.Interaction, member: discord.Member):
     await interaction.response.send_message(roast_text)
 
 
+TRUTH_PROMPTS = [
+    "What is the most embarrassing thing you've done in front of the alliance?",
+    "Which game do you secretly spend way too much time playing?",
+    "What is your biggest gaming rage moment?",
+    "Who in this server would you trust to lead you into battle?",
+    "What is one skill you wish you were better at?",
+    "What is the funniest excuse you've ever used?",
+    "What is the weirdest food combination you actually enjoy?",
+    "What is a harmless secret you've never told the server?",
+    "What is the last thing that made you laugh really hard?",
+    "If you could instantly master one skill, what would it be?",
+    "What is your most questionable gaming strategy?",
+    "What is one thing you would change about your playstyle?",
+]
+
+DARE_PROMPTS = [
+    "Send the last meme saved on your phone.",
+    "Change your server nickname to something silly for 10 minutes.",
+    "Send a message using only emojis.",
+    "Compliment the person who last sent a message in this channel.",
+    "Type your next message with your eyes closed.",
+    "Send a dramatic battle speech in this channel.",
+    "Use three completely unrelated emojis in your next message.",
+    "Say 'I am the greatest strategist alive' with complete confidence.",
+    "Post your best one-line joke in this channel.",
+    "React to the next message with the most unexpected emoji you can find.",
+    "Describe your current mood using only a movie title.",
+    "Challenge someone to a friendly /roast battle.",
+]
+
+
+@bot.tree.command(name="truth", description="Get a random Truth question")
+async def truth(interaction: discord.Interaction):
+    await interaction.response.send_message(f"🟢 **Truth:** {random.choice(TRUTH_PROMPTS)}")
+
+
+@bot.tree.command(name="dare", description="Get a random Dare challenge")
+async def dare(interaction: discord.Interaction):
+    await interaction.response.send_message(f"🔴 **Dare:** {random.choice(DARE_PROMPTS)}")
+
+
 @bot.tree.command(name="alliance", description="Set your alliance name")
 @app_commands.describe(name="Alliance name")
 async def alliance(interaction: discord.Interaction, name: str):
