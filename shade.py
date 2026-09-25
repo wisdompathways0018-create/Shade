@@ -61,11 +61,35 @@ async def rate(interaction: discord.Interaction, member: discord.Member):
     await interaction.response.send_message(f"{member.mention} gets **{score}/100**!\n{random.choice(comments)}")
 
 
+# Each server/member gets a shuffled roast deck so Shade does not repeat a roast
+# until it has used every roast in the deck.
+_roast_bags: dict[tuple[int, int], list[int]] = {}
+
+
 @bot.tree.command(name="roast", description="Roast a member")
 @app_commands.describe(member="Choose a member")
 async def roast(interaction: discord.Interaction, member: discord.Member):
-    roasts = [f"💀 {member.mention} donates more troops than they kill.", f"🏰 {member.mention} thinks gathering counts as PvP.", f"😂 {member.mention} loses castles faster than gathering nodes.", f"🔥 {member.mention} marches so late the battle is already over.", f"⚔️ {member.mention}'s immortals are on permanent vacation.", f"📉 {member.mention}'s STP is just for decoration.", f"❄️ {member.mention} thinks Frost is a farming event.", f"🎯 {member.mention} couldn't rally a barn door.", f"💀 {member.mention} is the reason R5 keeps sending reminder mails.", f"👑 If excuses earned merit, {member.mention} would rank first."]
-    await interaction.response.send_message(random.choice(roasts))
+    roasts = [
+        f"💀 {member.mention} donates more troops than they kill.",
+        f"🏰 {member.mention} thinks gathering counts as PvP.",
+        f"😂 {member.mention} loses castles faster than gathering nodes.",
+        f"🔥 {member.mention} marches so late the battle is already over.",
+        f"⚔️ {member.mention}'s immortals are on permanent vacation.",
+        f"📉 {member.mention}'s STP is just for decoration.",
+        f"❄️ {member.mention} thinks Frost is a farming event.",
+        f"🎯 {member.mention} couldn't rally a barn door.",
+        f"💀 {member.mention} is the reason R5 keeps sending reminder mails.",
+        f"👑 If excuses earned merit, {member.mention} would rank first.",
+    ]
+
+    key = (interaction.guild.id if interaction.guild else 0, member.id)
+    bag = _roast_bags.setdefault(key, [])
+    if not bag:
+        bag.extend(range(len(roasts)))
+        random.shuffle(bag)
+
+    roast_text = roasts[bag.pop()]
+    await interaction.response.send_message(roast_text)
 
 
 @bot.tree.command(name="alliance", description="Set your alliance name")
