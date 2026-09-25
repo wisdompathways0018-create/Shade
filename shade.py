@@ -65,6 +65,16 @@ async def rate(interaction: discord.Interaction, member: discord.Member):
 # Each server/member gets a shuffled roast deck so Shade does not repeat a roast
 # until it has used every roast in the deck.
 _roast_bags: dict[tuple[int, int], list[int]] = {}
+_truth_bags: dict[int, list[int]] = {}
+_dare_bags: dict[int, list[int]] = {}
+
+def _next_prompt(prompts: list[str], bags: dict[int, list[int]], guild_id: int) -> str:
+    bag = bags.setdefault(guild_id, [])
+    if not bag:
+        bag.extend(range(len(prompts)))
+        random.shuffle(bag)
+    return prompts[bag.pop()]
+
 
 
 @bot.tree.command(name="roast", description="Roast a member")
@@ -94,35 +104,128 @@ async def roast(interaction: discord.Interaction, member: discord.Member):
 
 
 TRUTH_PROMPTS = [
-    "What is the most embarrassing thing you've done in front of the alliance?",
-    "Which game do you secretly spend way too much time playing?",
+    "What is the funniest thing that has happened to you in a Discord server?",
+    "What is your most embarrassing gaming moment?",
+    "Which game could you play for hours without getting bored?",
+    "What is the weirdest nickname you have ever had?",
+    "Who was your first gaming friend?",
+    "What is a skill you wish you had?",
+    "What is the funniest excuse you have ever made?",
+    "What is one thing you are surprisingly good at?",
     "What is your biggest gaming rage moment?",
-    "Who in this server would you trust to lead you into battle?",
-    "What is one skill you wish you were better at?",
-    "What is the funniest excuse you've ever used?",
-    "What is the weirdest food combination you actually enjoy?",
-    "What is a harmless secret you've never told the server?",
-    "What is the last thing that made you laugh really hard?",
+    "What is the longest you have stayed awake gaming?",
+    "What is the worst game purchase you have made?",
+    "What is a game everyone loves that you do not enjoy?",
+    "What is your favorite game of all time?",
+    "What is the most random thing in your phone gallery?",
+    "What is the last thing that made you laugh?",
+    "What is a habit you wish you could stop?",
+    "What is something you are proud of?",
+    "What is one place you really want to visit?",
+    "What is your dream job?",
+    "What is your biggest pet peeve?",
+    "What is the funniest misunderstanding you have had?",
+    "What is the strangest food you have tried?",
+    "What is your favorite food?",
+    "What is one movie you can watch repeatedly?",
+    "What is your favorite song right now?",
+    "What is a talent you wish you had?",
+    "What is the most useless thing you know a lot about?",
+    "What is your worst gaming strategy?",
+    "What is your favorite childhood memory?",
+    "What was your first online game?",
+    "What is the most competitive you have ever been?",
+    "What is something you have never tried but want to?",
+    "What is your funniest school memory?",
+    "What is one thing that instantly improves your mood?",
+    "What is your biggest fear in a game?",
+    "What is the funniest username you have seen?",
+    "What is your favorite meme format?",
+    "What is one rule you would add to this server?",
+    "What is one rule you would remove from this server?",
+    "Who would you trust most to lead a team in a game?",
+    "What is your favorite gaming character?",
+    "What is the most chaotic thing you have done in a game?",
+    "What is the most ridiculous thing you have argued about?",
+    "What is one thing you would change about your gaming setup?",
+    "What is your favorite thing about this server?",
+    "What is something people often misunderstand about you?",
+    "What is the funniest message you have received?",
+    "What is the last game you played?",
+    "What is your favorite season of the year?",
     "If you could instantly master one skill, what would it be?",
-    "What is your most questionable gaming strategy?",
-    "What is one thing you would change about your playstyle?",
+    "If you could meet any fictional character, who would it be?",
+    "If you could live anywhere for a year, where would you go?",
+    "If you had one unlimited wish, what would you choose?",
+    "What is the most spontaneous thing you have done?",
+    "What is a harmless secret you have never told the server?",
+    "What is your most questionable gaming decision?",
+    "What is one achievement you want to unlock this year?",
+    "What is the funniest thing you have seen in a group chat?",
+    "What is one thing you could never give up?",
 ]
 
 DARE_PROMPTS = [
-    "Send the last meme saved on your phone.",
-    "Change your server nickname to something silly for 10 minutes.",
     "Send a message using only emojis.",
-    "Compliment the person who last sent a message in this channel.",
-    "Type your next message with your eyes closed.",
-    "Send a dramatic battle speech in this channel.",
+    "Post your best one-line joke.",
+    "Send the last meme you saved.",
+    "Change your nickname to something silly for 10 minutes.",
+    "Write a dramatic battle speech in chat.",
     "Use three completely unrelated emojis in your next message.",
-    "Say 'I am the greatest strategist alive' with complete confidence.",
-    "Post your best one-line joke in this channel.",
-    "React to the next message with the most unexpected emoji you can find.",
-    "Describe your current mood using only a movie title.",
+    "Compliment the person who last sent a message.",
+    "Type your next message with your eyes closed.",
+    "Describe your mood using only a movie title.",
     "Challenge someone to a friendly /roast battle.",
+    "Send a GIF that describes your current mood.",
+    "Write a sentence where every word starts with the same letter.",
+    "Send your best motivational quote.",
+    "Talk like a medieval king for your next message.",
+    "Write a two-line poem about gaming.",
+    "Use only lowercase letters for your next three messages.",
+    "Use only uppercase letters for your next message.",
+    "Describe your favorite game without naming it.",
+    "Describe yourself using exactly five emojis.",
+    "Make up a ridiculous name for a new game.",
+    "Write a fake patch note for yourself.",
+    "Give the server a completely unnecessary piece of advice.",
+    "Send a message containing exactly five emojis and no words.",
+    "Write a dramatic apology to a fictional character.",
+    "Invent a new holiday and explain it in one sentence.",
+    "Give yourself a ridiculous gaming title.",
+    "Write a one-sentence movie plot about your last game.",
+    "Make up a funny alliance motto.",
+    "Send the most wholesome message you can think of.",
+    "Write a fake news headline about something happening in this server.",
+    "Describe your day as if it were a video game quest.",
+    "Create a new emoji combination and explain what it means.",
+    "Write a three-word motivational speech.",
+    "Pretend you are a game announcer and announce the next message.",
+    "Give someone in the channel a friendly compliment.",
+    "Write a fake achievement you just unlocked.",
+    "Describe your favorite food like a professional food critic.",
+    "Make up a ridiculous strategy for winning a game.",
+    "Write a battle cry using at least three emojis.",
+    "Send a message that rhymes.",
+    "Pretend you are an NPC for your next message.",
+    "Give yourself a superhero name.",
+    "Write a fake server rule that sounds completely serious.",
+    "Describe your favorite game using only three words.",
+    "Write a tiny horror story in exactly two sentences.",
+    "Make up a ridiculous character backstory for yourself.",
+    "Send a message that starts with 'Breaking news:'",
+    "Write a compliment without using the words 'good', 'great', or 'nice'.",
+    "Pretend the server is a kingdom and announce a new law.",
+    "Create a funny slogan for Shade.",
+    "Write a one-line roast aimed at yourself.",
+    "Describe your gaming skills like a sports commentator.",
+    "Make up a ridiculous item for an RPG.",
+    "Write a fake quest that members of the server must complete.",
+    "Send a message containing only food emojis.",
+    "Give the next person who messages a friendly challenge.",
+    "Write a dramatic farewell and then say 'just kidding'.",
+    "Create a funny name for a fictional alliance.",
+    "Explain your favorite game as badly as possible.",
 ]
-
 
 def _truth_dare_embed(interaction: discord.Interaction, prompt_type: str, prompt: str) -> discord.Embed:
     if prompt_type == "TRUTH":
@@ -153,12 +256,12 @@ class TruthDareView(discord.ui.View):
 
     async def _send_prompt(self, interaction: discord.Interaction, prompt_type: str):
         if prompt_type == "TRUTH":
-            prompt = random.choice(TRUTH_PROMPTS)
+            prompt = _next_prompt(TRUTH_PROMPTS, _truth_bags, interaction.guild.id if interaction.guild else 0)
         elif prompt_type == "DARE":
-            prompt = random.choice(DARE_PROMPTS)
+            prompt = _next_prompt(DARE_PROMPTS, _dare_bags, interaction.guild.id if interaction.guild else 0)
         else:
             prompt_type = random.choice(["TRUTH", "DARE"])
-            prompt = random.choice(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS)
+            prompt = _next_prompt(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS, _truth_bags if prompt_type == "TRUTH" else _dare_bags, interaction.guild.id if interaction.guild else 0)
 
         await interaction.response.edit_message(
             embed=_truth_dare_embed(interaction, prompt_type, prompt),
