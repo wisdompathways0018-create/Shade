@@ -111,26 +111,16 @@ async def roast(interaction: discord.Interaction, member: discord.Member):
 
 
 TRUTH_PROMPTS = [
-    "What was your exact first impression of the person to your left?",
-    "What is the most expensive thing you have bought while drunk?",
-    "What minor thing does your partner or best friend do that secretly drives you crazy?",
-    "Who is the last person you looked up on social media that you shouldn't have?",
-    "What is the biggest lie you have told to get out of a social commitment?",
-    "What is one thing you still do now that is completely childish?",
-    "What movie or TV show do you secretly love but feel embarrassed to admit?",
-    "What is the absolute worst dating experience you have ever had?",
-    "Describe your most embarrassing fashion phase or haircut.",
-    "What is a bizarre talent you have that nobody in this room knows about?",
-    "What is a realistic fear you have that you rarely talk about?",
-    "If you could swap lives with anyone in this room for twenty-four hours, who would it be?",
-    "What do people most frequently get wrong or misjudge about you?",
-    "Have you ever taken credit for something someone else did at work?",
-    "Do you have an ex that got away, and would you get back with them?",
-    "What is your biggest insecurity regarding your current lifestyle or career?",
-    "What is the most illegal thing you have ever done without getting caught?",
-    "Who in this room, if anyone, are you most attracted to?",
-    "What is the nicest thing and the meanest thing you have said about someone in this room?",
-    "What is a secret ambition you have never told anyone because it sounds too unrealistic?",
+    "What is the most scandalous thing you have done while completely intoxicated?",
+    "What is the most public place you have ever been intimate with someone?",
+    "Who is the most prominent or attractive person to ever slide into your direct messages?",
+    "What is an unconventional or unusual trait that you find incredibly attractive?",
+    "What is a romantic or intimate fantasy you want to try but have not yet?",
+    "What is the most embarrassing text message you have accidentally sent to the wrong person?",
+    "Have you ever walked in on your parents or roommates doing something private?",
+    "What is the worst or weirdest pickup line you have ever used or received?",
+    "Have you ever gone skinny dipping, and if so, where and with whom?",
+    "What is the last text message you sent to your romantic partner or crush?",
 ]
 
 DARE_PROMPTS = [
