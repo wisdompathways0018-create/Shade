@@ -170,99 +170,48 @@ TRUTH_PROMPTS = [
 
 DARE_PROMPTS = [
     "Send a genuine compliment to the last person you texted.",
-    "Call a friend and say, \"I have something important to tell you,\" then reveal that you just wanted to say hi.",
-    "Change your profile picture to the funniest photo in your camera roll for 10 minutes.",
-    "Send a voice message to someone saying something unexpectedly nice about them.",
     "Text someone you have not spoken to in a while and ask how they are doing.",
-    "Let the group choose a harmless status for you to use for the next 15 minutes.",
-    "Show the group the oldest non-private photo in your camera roll.",
-    "Send a message containing only three random emojis to the last person who messaged you.",
-    "Compliment yourself out loud with three things you genuinely like about yourself.",
-    "Do your best impression of someone you know for 30 seconds.",
+    "Send a voice message to someone saying something unexpectedly nice about them.",
     "Tell the group one harmless embarrassing story from your childhood.",
     "Read your most recent sent message out loud.",
     "Send a thank-you message to someone who has helped you recently.",
-    "Let someone choose a song for you and listen to at least 30 seconds of it.",
     "Text a friend asking them to describe you in three words.",
-    "Do a dramatic reading of the last message you received.",
-    "Post a harmless one-line appreciation for a friend in your group chat.",
-    "Take a silly selfie and keep it as your profile picture for 10 minutes.",
-    "Tell the group the most spontaneous thing you have ever done.",
-    "Call someone you trust and tell them one thing you appreciate about them.",
-    "Send a harmless pickup line to a friend and immediately reveal it was a dare.",
-    "Let the group pick a word you must naturally use three times in conversation.",
-    "Share your funniest autocorrect mistake.",
-    "Do 20 seconds of your best dance without music.",
-    "Tell the group about your most awkward first date or social interaction.",
-    "Send a meme to the fifth person in your recent chats.",
-    "Let someone choose an emoji that you must use in your next five messages.",
-    "Speak in an exaggerated accent for the next two minutes.",
-    "Show the group your current phone wallpaper.",
     "Tell someone in the room one sincere compliment you have never told them before.",
     "Write a two-line poem about your current mood and read it aloud.",
-    "Text someone you care about: \"Hope your day is going well.\"",
-    "Let the group choose a harmless nickname for you for the next 10 minutes.",
+    "Tell the group about the most spontaneous thing you have ever done.",
+    "Call someone you trust and tell them one thing you appreciate about them.",
     "Tell the group about a hobby or interest you rarely talk about.",
-    "Do your best celebrity impression for 30 seconds.",
     "Send a voice note singing one line from a song.",
-    "Let another player choose one harmless question you must answer honestly.",
-    "Show the group the funniest saved meme on your phone.",
     "Tell the group one thing on your bucket list.",
     "Send a genuine apology to someone if there is a small unresolved misunderstanding.",
-    "Describe your ideal weekend without using the words \"relax,\" \"fun,\" or \"sleep.\"",
     "Tell the group about the most memorable compliment you have ever received.",
-    "Call someone and ask them to tell you a joke.",
     "Share one goal you want to accomplish this year.",
     "Send a random but kind compliment to someone in your contacts.",
-    "Do a 30-second dramatic reenactment of your last minor inconvenience.",
-    "Let the group choose a harmless song for your next social media story.",
     "Tell the group about a food combination you love that other people find strange.",
-    "Read the last three words of your notes app out loud, if they are non-private.",
     "Text a friend: \"Quick question: what is one thing you think I am good at?\"",
     "Give someone in the group a sincere compliment without making it a joke.",
     "Tell the group the most ridiculous excuse you have ever used to cancel plans.",
     "Make up a ridiculous business idea and pitch it in 30 seconds.",
-    "Send a wholesome meme to someone who could use a laugh.",
     "Talk about your dream vacation for one minute without saying the destination.",
-    "Let the group choose whether you have to whisper or speak dramatically for the next minute.",
     "Share one small thing that always makes your day better.",
     "Tell the group one thing you would change about your daily routine.",
     "Send a supportive message to someone who has been stressed recently.",
     "Do your best impression of how you sound when you are half asleep.",
+    "Call a friend and say, \"I have something important to tell you,\" then reveal that you just wanted to say hi.",
+    "Do your best impression of someone you know for 30 seconds.",
+    "Let the group choose a harmless status for you to use for the next 15 minutes.",
+    "Show the group the oldest non-private photo in your camera roll.",
+    "Send a message containing only three random emojis to the last person who messaged you.",
+    "Compliment yourself out loud with three things you genuinely like about yourself.",
+    "Let someone choose a song for you and listen to at least 30 seconds of it.",
+    "Text someone you care about: \"Hope your day is going well.\"",
+    "Share your funniest autocorrect mistake.",
+    "Do a 30-second dramatic reenactment of your last minor inconvenience.",
+    "Tell the group your ideal weekend without using the words \"relax,\" \"fun,\" or \"sleep.\"",
+    "Send a wholesome meme to someone who could use a laugh.",
 ]
 
-
-
-def _truth_dare_embed(interaction: discord.Interaction, prompt_type: str, prompt: str) -> discord.Embed:
-    if prompt_type == "TRUTH":
-        color = discord.Color.green()
-        emoji = "🟢"
-    elif prompt_type == "DARE":
-        color = discord.Color.red()
-        emoji = "🔴"
-    else:
-        color = discord.Color.blurple()
-        emoji = "🎲"
-
-    embed = discord.Embed(
-        title=f"{emoji} {prompt}",
-        color=color,
-    )
-    embed.set_footer(text=f"Type: {prompt_type} • Requested by {interaction.user.display_name}")
-    embed.set_author(
-        name=f"Requested by {interaction.user.display_name}",
-        icon_url=interaction.user.display_avatar.url,
-    )
-    return embed
-
-
-class TruthDareView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    async def _send_prompt(self, interaction: discord.Interaction, prompt_type: str):
-        if prompt_type == "TRUTH":
-            prompt = _next_prompt(TRUTH_PROMPTS, _truth_bags, _last_truth, interaction.guild.id if interaction.guild else 0)
+_truth_bags, _last_truth, interaction.guild.id if interaction.guild else 0)
         elif prompt_type == "DARE":
             prompt = _next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, interaction.guild.id if interaction.guild else 0)
         else:
