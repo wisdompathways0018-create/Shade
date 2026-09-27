@@ -89,16 +89,6 @@ def _next_prompt(prompts: list[str], bags: dict[int, list[int]], last_used: dict
 @app_commands.describe(member="Choose a member")
 async def roast(interaction: discord.Interaction, member: discord.Member):
     roasts = [
-        f"💀 {member.mention} donates more troops than they kill.",
-        f"🏰 {member.mention} thinks gathering counts as PvP.",
-        f"😂 {member.mention} loses castles faster than gathering nodes.",
-        f"🔥 {member.mention} marches so late the battle is already over.",
-        f"⚔️ {member.mention}'s immortals are on permanent vacation.",
-        f"📉 {member.mention}'s STP is just for decoration.",
-        f"❄️ {member.mention} thinks Frost is a farming event.",
-        f"🎯 {member.mention} couldn't rally a barn door.",
-        f"💀 {member.mention} is the reason R5 keeps sending reminder mails.",
-        f"👑 If excuses earned merit, {member.mention} would rank first.",
         f"💀 {member.mention} has a PhD in doing absolutely nothing during rallies.",
         f"😂 {member.mention} joins the war after the victory screen appears.",
         f"📉 {member.mention}'s battle report looks like a receipt for donations.",
