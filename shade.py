@@ -65,6 +65,7 @@ async def rate(interaction: discord.Interaction, member: discord.Member):
 # Each server/member gets a shuffled roast deck so Shade does not repeat a roast
 # until it has used every roast in the deck.
 _roast_bags: dict[tuple[int, int], list[int]] = {}
+_last_roast: dict[tuple[int, int], int] = {}
 _truth_bags: dict[int, list[int]] = {}
 _dare_bags: dict[int, list[int]] = {}
 _last_truth: dict[int, int] = {}
@@ -106,7 +107,15 @@ async def roast(interaction: discord.Interaction, member: discord.Member):
         bag.extend(range(len(roasts)))
         random.shuffle(bag)
 
-    roast_text = roasts[bag.pop()]
+        # Prevent the final roast of one cycle from being the first roast
+        # of the next cycle.
+        previous = _last_roast.get(key)
+        if previous is not None and len(bag) > 1 and bag[-1] == previous:
+            bag[-1], bag[-2] = bag[-2], bag[-1]
+
+    selected = bag.pop()
+    _last_roast[key] = selected
+    roast_text = roasts[selected]
     await interaction.response.send_message(roast_text)
 
 
