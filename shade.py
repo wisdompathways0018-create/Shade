@@ -211,12 +211,38 @@ DARE_PROMPTS = [
     "Send a wholesome meme to someone who could use a laugh.",
 ]
 
-_truth_bags, _last_truth, interaction.guild.id if interaction.guild else 0)
+
+
+def _truth_dare_embed(interaction: discord.Interaction, prompt_type: str, prompt: str) -> discord.Embed:
+    embed = discord.Embed(
+        title="🎲 Truth or Dare",
+        description=prompt,
+        color=discord.Color.blurple(),
+    )
+    embed.add_field(name="Requested by", value=interaction.user.mention, inline=True)
+    embed.add_field(name="Type", value=prompt_type, inline=True)
+    return embed
+
+
+class TruthDareView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    async def _send_prompt(self, interaction: discord.Interaction, prompt_type: str):
+        guild_id = interaction.guild.id if interaction.guild else 0
+
+        if prompt_type == "TRUTH":
+            prompt = _next_prompt(TRUTH_PROMPTS, _truth_bags, _last_truth, guild_id)
         elif prompt_type == "DARE":
-            prompt = _next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, interaction.guild.id if interaction.guild else 0)
+            prompt = _next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, guild_id)
         else:
             prompt_type = random.choice(["TRUTH", "DARE"])
-            prompt = _next_prompt(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS, _truth_bags if prompt_type == "TRUTH" else _dare_bags, _last_truth if prompt_type == "TRUTH" else _last_dare, interaction.guild.id if interaction.guild else 0)
+            prompt = _next_prompt(
+                TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS,
+                _truth_bags if prompt_type == "TRUTH" else _dare_bags,
+                _last_truth if prompt_type == "TRUTH" else _last_dare,
+                guild_id,
+            )
 
         await interaction.response.defer()
         if interaction.channel is not None:
@@ -225,15 +251,30 @@ _truth_bags, _last_truth, interaction.guild.id if interaction.guild else 0)
                 view=TruthDareView(),
             )
 
-    @discord.ui.button(label="Truth", emoji="🟢", style=discord.ButtonStyle.success, custom_id="shade:truthdare:truth")
+    @discord.ui.button(
+        label="Truth",
+        emoji="🟢",
+        style=discord.ButtonStyle.success,
+        custom_id="shade:truthdare:truth",
+    )
     async def truth_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._send_prompt(interaction, "TRUTH")
 
-    @discord.ui.button(label="Dare", emoji="🔴", style=discord.ButtonStyle.danger, custom_id="shade:truthdare:dare")
+    @discord.ui.button(
+        label="Dare",
+        emoji="🔴",
+        style=discord.ButtonStyle.danger,
+        custom_id="shade:truthdare:dare",
+    )
     async def dare_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._send_prompt(interaction, "DARE")
 
-    @discord.ui.button(label="Random", emoji="🎲", style=discord.ButtonStyle.primary, custom_id="shade:truthdare:random")
+    @discord.ui.button(
+        label="Random",
+        emoji="🎲",
+        style=discord.ButtonStyle.primary,
+        custom_id="shade:truthdare:random",
+    )
     async def random_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self._send_prompt(interaction, "RANDOM")
 
