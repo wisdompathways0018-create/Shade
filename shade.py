@@ -301,6 +301,63 @@ DARE_PROMPTS = [
 
 
 
+_generated_truths: dict[int, set[str]] = {}
+
+def _generate_truth_question(guild_id: int) -> str:
+    """Generate a fresh local Truth question without an external API."""
+    topics = [
+        "your relationships", "your friendships", "your dating life", "your work life",
+        "your family", "your habits", "your personality", "your ambitions",
+        "your biggest mistakes", "your social life", "your past", "your future",
+    ]
+    subjects = [
+        "a person you used to know", "your closest friend", "someone you had a crush on",
+        "someone you recently met", "your partner or ex", "yourself five years ago",
+        "someone you secretly admire", "a person you wish you understood better",
+    ]
+    actions = [
+        "ignored", "missed", "misjudged", "lied to", "apologized to", "wanted to impress",
+        "wanted to avoid", "felt jealous of", "developed feelings for", "trusted too quickly",
+    ]
+    endings = [
+        "and why?", "and what happened next?", "and would you do it differently now?",
+        "and what did you learn from it?", "and would you admit it to them?",
+        "and how did it change you?", "and what would you do if it happened again?",
+    ]
+    templates = [
+        "What is one thing about {topic} that you rarely admit?",
+        "What is the biggest lesson {topic} has taught you?",
+        "What is something you wish people understood about you when it comes to {topic}?",
+        "What is the most awkward moment you remember involving {subject}?",
+        "When was the last time you {action} {subject}, {ending}",
+        "What is one decision involving {topic} that you would make differently today?",
+        "What is something you have hidden about {topic} because you were embarrassed?",
+        "What is one thing you are proud of about {topic}?",
+        "What is one thing about {topic} that you would change if you had the chance?",
+        "What is the most unexpected thing {subject} has made you realize about yourself?",
+    ]
+
+    seen = _generated_truths.setdefault(guild_id, set())
+    for _ in range(100):
+        template = random.choice(templates)
+        question = template.format(
+            topic=random.choice(topics),
+            subject=random.choice(subjects),
+            action=random.choice(actions),
+            ending=random.choice(endings),
+        )
+        if question not in seen:
+            seen.add(question)
+            return question
+
+    # Extremely unlikely fallback after a very large generated cycle.
+    return _next_prompt(TRUTH_PROMPTS, _truth_bags, _last_truth, guild_id)
+
+
+def _next_truth_prompt(guild_id: int) -> str:
+    return _generate_truth_question(guild_id)
+
+
 def _truth_dare_embed(interaction: discord.Interaction, prompt_type: str, prompt: str) -> discord.Embed:
     embed = discord.Embed(
         title="🎲 Truth or Dare",
@@ -320,17 +377,12 @@ class TruthDareView(discord.ui.View):
         guild_id = interaction.guild.id if interaction.guild else 0
 
         if prompt_type == "TRUTH":
-            prompt = _next_prompt(TRUTH_PROMPTS, _truth_bags, _last_truth, guild_id)
+            prompt = _next_truth_prompt(guild_id)
         elif prompt_type == "DARE":
             prompt = _next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, guild_id)
         else:
             prompt_type = random.choice(["TRUTH", "DARE"])
-            prompt = _next_prompt(
-                TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS,
-                _truth_bags if prompt_type == "TRUTH" else _dare_bags,
-                _last_truth if prompt_type == "TRUTH" else _last_dare,
-                guild_id,
-            )
+            prompt = _next_truth_prompt(guild_id) if prompt_type == "TRUTH" else _next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, guild_id)
 
         await interaction.response.defer()
         if interaction.channel is not None:
@@ -370,7 +422,7 @@ class TruthDareView(discord.ui.View):
 @bot.tree.command(name="truthdare", description="Start a Truth or Dare game")
 async def truthdare(interaction: discord.Interaction):
     prompt_type = random.choice(["TRUTH", "DARE"])
-    prompt = _next_prompt(TRUTH_PROMPTS if prompt_type == "TRUTH" else DARE_PROMPTS, _truth_bags if prompt_type == "TRUTH" else _dare_bags, _last_truth if prompt_type == "TRUTH" else _last_dare, interaction.guild.id if interaction.guild else 0)
+    prompt = _next_truth_prompt(interaction.guild.id if interaction.guild else 0) if prompt_type == "TRUTH" else _next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, interaction.guild.id if interaction.guild else 0)
     await interaction.response.send_message(
         embed=_truth_dare_embed(interaction, prompt_type, prompt),
         view=TruthDareView(),
@@ -379,7 +431,7 @@ async def truthdare(interaction: discord.Interaction):
 
 @bot.tree.command(name="truth", description="Get a random Truth question")
 async def truth(interaction: discord.Interaction):
-    await interaction.response.send_message(f"🟢 **Truth:** {_next_prompt(TRUTH_PROMPTS, _truth_bags, _last_truth, interaction.guild.id if interaction.guild else 0)}")
+    await interaction.response.send_message(f"🟢 **Truth:** {_next_truth_prompt(interaction.guild.id if interaction.guild else 0)}")
 
 
 @bot.tree.command(name="dare", description="Get a random Dare challenge")
