@@ -41,17 +41,32 @@ class SuggestionView(discord.ui.View):
         await self._update(interaction, "Rejected", "❌")
 
 
+BIRTHDAY_USER_ID = "1463254383398490325"
+BIRTHDAY_DATE = "10-02"
+
+
 async def _birthday_loop(bot: commands.Bot):
     await bot.wait_until_ready()
     while not bot.is_closed():
         today = time.strftime("%m-%d", time.gmtime())
         for guild in list(bot.guilds):
             config = get_server(guild.id)
+            birthdays = config.setdefault("birthdays", {})
+            # Shade automatically knows the owner's birthday; no command is required.
+            birthdays.setdefault(BIRTHDAY_USER_ID, BIRTHDAY_DATE)
             birthday_channel_id = config.get("birthday_channel")
             channel = guild.get_channel(birthday_channel_id) if birthday_channel_id else None
             if not isinstance(channel, discord.TextChannel):
+                channel = guild.system_channel
+            if not isinstance(channel, discord.TextChannel):
+                channel = next(
+                    (ch for ch in guild.text_channels
+                     if guild.me and ch.permissions_for(guild.me).send_messages),
+                    None,
+                )
+            if not isinstance(channel, discord.TextChannel):
+                save_server()
                 continue
-            birthdays = config.get("birthdays", {})
             announced = config.setdefault("birthday_announced", {})
             for uid, date in birthdays.items():
                 if date != today or announced.get(uid) == today:
