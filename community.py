@@ -1,6 +1,7 @@
 import asyncio
 import random
 import time
+from datetime import datetime, timezone, timedelta
 
 import discord
 from discord import app_commands
@@ -48,7 +49,7 @@ BIRTHDAY_DATE = "10-02"
 async def _birthday_loop(bot: commands.Bot):
     await bot.wait_until_ready()
     while not bot.is_closed():
-        today = time.strftime("%m-%d", time.gmtime())
+        today = (datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).strftime("%m-%d")
         for guild in list(bot.guilds):
             config = get_server(guild.id)
             birthdays = config.setdefault("birthdays", {})
