@@ -73,9 +73,17 @@ async def _birthday_loop(bot: commands.Bot):
                 if date != today or announced.get(uid) == today:
                     continue
                 member = guild.get_member(int(uid))
+                if member is None:
+                    try:
+                        member = await guild.fetch_member(int(uid))
+                    except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                        member = None
                 if member:
-                    await channel.send(f"🎂 Happy Birthday {member.mention}! 🎉 Have an amazing day!")
-                    announced[uid] = today
+                    try:
+                        await channel.send(f"🎂 Happy Birthday {member.mention}! 🎉 Have an amazing day!")
+                        announced[uid] = today
+                    except (discord.Forbidden, discord.HTTPException):
+                        pass
             save_server()
         await asyncio.sleep(3600)
 
