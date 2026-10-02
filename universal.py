@@ -100,7 +100,7 @@ async def _giveaway_loop(bot: commands.Bot):
 def setup(bot: commands.Bot):
     bot.add_view(TicketView(bot)); bot.add_view(CloseTicketView())
 
-    @bot.tree.command(name="shade", description="Open Shade's universal server tools")
+    @bot.tree.command(name="servertools", description="Open Shade's universal server tools")
     async def shade(interaction: discord.Interaction):
         embed=discord.Embed(title="🌑 Shade • Server Assistant", color=discord.Color.dark_purple()); embed.description="**Community**\n🎫 Tickets • 🎭 Roles • 👋 Welcome • 📋 Logs\n\n**Engagement**\n🎉 Giveaways • 📊 Polls • 💡 Suggestions\n\n**Safety**\n🛡️ AutoMod • 🔗 Invite protection • 💬 Spam protection\n\n**Gaming**\n❄️ Frost • ⚔️ Infinity Kingdom tools"; await interaction.response.send_message(embed=embed)
 
