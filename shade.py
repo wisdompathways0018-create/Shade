@@ -20,6 +20,7 @@ intents.invites = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 _universal_modules_loaded = False
+_personal_tasks_started = False
 
 
 @bot.event
@@ -31,9 +32,13 @@ async def on_ready():
     if not _universal_modules_loaded:
         universal.setup(bot)
         community.setup(bot)
-        personal.setup(bot)
         bot.add_view(TruthDareView())
         _universal_modules_loaded = True
+
+    global _personal_tasks_started
+    if not _personal_tasks_started:
+        personal.start_tasks(bot)
+        _personal_tasks_started = True
 
     try:
         synced = await bot.tree.sync()
@@ -583,6 +588,7 @@ supremacy.setup(bot)
 cor.setup(bot)
 malena.setup(bot)
 moderation.setup(bot)
+personal.setup(bot)
 
 
 if __name__ == "__main__":
