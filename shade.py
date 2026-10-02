@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from config import get_server, save_server
+from owner import OWNER_USER_ID
 
 TOKEN = os.getenv("TOKEN")
 
@@ -39,6 +40,16 @@ async def on_ready():
         print(f"❌ Failed to sync commands: {e}")
     print(f"🤖 Logged in as {bot.user}")
 
+
+@bot.tree.command(name="shade", description="Show what Shade is")
+async def shade(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        f"🌑 Shade is a personal bot built around <@{OWNER_USER_ID}>."
+    )
+
+@bot.tree.command(name="owner", description="Show Shade's owner")
+async def owner(interaction: discord.Interaction):
+    await interaction.response.send_message(f"🖤 Shade belongs to <@{OWNER_USER_ID}>.")
 
 @bot.tree.command(name="king", description="Choose today's King")
 async def king(interaction: discord.Interaction):
@@ -451,7 +462,7 @@ async def alliance(interaction: discord.Interaction, name: str):
     await interaction.response.send_message(f"✅ Alliance set to **{name}**")
 
 
-@bot.tree.command(name="timezone", description="Set your alliance timezone")
+@bot.tree.command(name="timezone", description="Set your timezone")
 @app_commands.describe(timezone="Example: UTC+5:30")
 async def timezone(interaction: discord.Interaction, timezone: str):
     if interaction.guild is None:
@@ -503,7 +514,7 @@ async def setup(interaction: discord.Interaction):
         await interaction.response.send_message("❌ This command can only be used in a server.", ephemeral=True)
         return
     config = get_server(interaction.guild.id)
-    embed = discord.Embed(title="🌑 Shade Configuration", color=discord.Color.dark_gray())
+    embed = discord.Embed(title="🌑 Shade • Personal Configuration", color=discord.Color.dark_gray())
     embed.add_field(name="Alliance", value=config.get("alliance_name") or "Not Set", inline=False)
     embed.add_field(name="Timezone", value=config.get("timezone") or "UTC", inline=False)
     role = interaction.guild.get_role(config["ping_role"]) if config.get("ping_role") else None
