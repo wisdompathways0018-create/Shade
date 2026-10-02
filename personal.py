@@ -86,7 +86,7 @@ def setup(bot: commands.Bot):
     # Game rounds are channel-scoped. Multiple people can answer the same
     # question, but only one next question is generated after a short window.
     game_rounds = {"wyr": {}, "nhie": {}}
-    GAME_ANSWER_WINDOW = 6.0
+    GAME_ANSWER_WINDOW = 8.0
 
     @bot.tree.command(name="profile", description="Show Shade's owner's profile")
     async def profile(interaction: discord.Interaction):
