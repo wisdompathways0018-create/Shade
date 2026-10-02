@@ -322,8 +322,10 @@ def setup(bot: commands.Bot):
     ]
 
     async def send_nhie(interaction: discord.Interaction):
+        # Acknowledge immediately so Discord never reports "The application did not respond".
+        await interaction.response.defer()
         prompt = random.choice(NHIE_PROMPTS)
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"🙈 **Never Have I Ever...**\n\n{prompt}",
             view=NeverHaveIEverView(),
         )
