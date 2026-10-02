@@ -410,14 +410,20 @@ def setup(bot: commands.Bot):
         return f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
 
     async def _advance_wyr(channel, old_message_id: int):
+        """Keep one WYR round loop alive and post a new question every 8 seconds."""
         try:
-            await asyncio.sleep(GAME_ANSWER_WINDOW)
-            state = game_rounds["wyr"].get(channel.id)
-            if not state or state["message_id"] != old_message_id:
-                return
-            message = await channel.send(_wyr_content(channel.id), view=WouldYouRatherView())
-            state["message_id"] = message.id
-            state["task"] = asyncio.create_task(_advance_wyr(channel, message.id))
+            current_message_id = old_message_id
+            while True:
+                await asyncio.sleep(GAME_ANSWER_WINDOW)
+                state = game_rounds["wyr"].get(channel.id)
+                if not state or state["message_id"] != current_message_id:
+                    return
+                message = await channel.send(
+                    _wyr_content(channel.id),
+                    view=WouldYouRatherView(),
+                )
+                state["message_id"] = message.id
+                current_message_id = message.id
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -642,14 +648,20 @@ def setup(bot: commands.Bot):
         return f"🙈 **Never Have I Ever...**\n\n{_next_game_prompt('nhie', channel_id, NHIE_PROMPTS)}"
 
     async def _advance_nhie(channel, old_message_id: int):
+        """Keep one NHIE round loop alive and post a new question every 8 seconds."""
         try:
-            await asyncio.sleep(GAME_ANSWER_WINDOW)
-            state = game_rounds["nhie"].get(channel.id)
-            if not state or state["message_id"] != old_message_id:
-                return
-            message = await channel.send(_nhie_content(channel.id), view=NeverHaveIEverView())
-            state["message_id"] = message.id
-            state["task"] = asyncio.create_task(_advance_nhie(channel, message.id))
+            current_message_id = old_message_id
+            while True:
+                await asyncio.sleep(GAME_ANSWER_WINDOW)
+                state = game_rounds["nhie"].get(channel.id)
+                if not state or state["message_id"] != current_message_id:
+                    return
+                message = await channel.send(
+                    _nhie_content(channel.id),
+                    view=NeverHaveIEverView(),
+                )
+                state["message_id"] = message.id
+                current_message_id = message.id
         except asyncio.CancelledError:
             raise
         except Exception as exc:
