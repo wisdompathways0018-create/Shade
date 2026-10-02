@@ -30,6 +30,7 @@ async def on_ready():
     if not _universal_modules_loaded:
         universal.setup(bot)
         community.setup(bot)
+        personal.setup(bot)
         bot.add_view(TruthDareView())
         _universal_modules_loaded = True
 
@@ -566,6 +567,7 @@ import malena
 import moderation
 import universal
 import community
+import personal
 
 events.setup(bot)
 reminders.setup(bot)
