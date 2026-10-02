@@ -290,7 +290,7 @@ def setup(bot: commands.Bot):
         async def _choose(self, interaction: discord.Interaction, choice: str):
             await interaction.response.defer()
             await interaction.followup.send(
-                f"🤔 <@{interaction.user.id}> chose **{choice}**."
+                f"🤔 **<@{interaction.user.id}> chose {choice}!**"
             )
             if interaction.channel is not None:
                 question, option_a, option_b = random.choice(WYR_PROMPTS)
@@ -335,10 +335,10 @@ def setup(bot: commands.Bot):
             # Acknowledge the click and tag the player who answered, then start the next round.
             await interaction.response.defer()
             await interaction.followup.send(
-                f"🙈 <@{interaction.user.id}> chose **{answer}**."
+                f"🙈 **<@{interaction.user.id}> says: {answer}!**"
             )
             await interaction.followup.send(
-                _nhie_message(),
+                f"🙈 **Never Have I Ever...**\n\n{random.choice(NHIE_PROMPTS)}",
                 view=NeverHaveIEverView(),
             )
 
