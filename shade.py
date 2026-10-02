@@ -19,21 +19,12 @@ intents.invites = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-_universal_modules_loaded = False
 _personal_tasks_started = False
 
 
 @bot.event
 async def on_ready():
-    global _universal_modules_loaded
-
-    # universal.py and community.py start background tasks. They must be
-    # initialized after Discord has created the running event loop.
-    if not _universal_modules_loaded:
-        universal.setup(bot)
-        community.setup(bot)
-        bot.add_view(TruthDareView())
-        _universal_modules_loaded = True
+    bot.add_view(TruthDareView())
 
     global _personal_tasks_started
     if not _personal_tasks_started:
