@@ -44,9 +44,11 @@ async def on_ready():
         synced = await bot.tree.sync()
         print(f"✅ Synced {len(synced)} global slash commands.")
         for guild in bot.guilds:
+            # Remove stale guild-only commands left by the old leadership/IK bot.
+            bot.tree.clear_commands(guild=guild)
             bot.tree.copy_global_to(guild=guild)
             guild_synced = await bot.tree.sync(guild=guild)
-            print(f"✅ Synced {len(guild_synced)} guild commands for {guild.name}.")
+            print(f"✅ Replaced {len(guild_synced)} guild commands for {guild.name}.")
     except Exception as e:
         print(f"❌ Failed to sync commands: {e}")
     print(f"🤖 Logged in as {bot.user}")
