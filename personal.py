@@ -83,6 +83,11 @@ async def _reminder_loop(bot: commands.Bot):
 def setup(bot: commands.Bot):
     _owner_profile()
 
+    # Game rounds are channel-scoped. Multiple people can answer the same
+    # question, but only one next question is generated after a short window.
+    game_rounds = {"wyr": {}, "nhie": {}}
+    GAME_ANSWER_WINDOW = 6.0
+
     @bot.tree.command(name="profile", description="Show Shade's owner's profile")
     async def profile(interaction: discord.Interaction):
         p = _owner_profile()
@@ -275,27 +280,45 @@ def setup(bot: commands.Bot):
         ("Would you rather have one best friend or a hundred good friends?", "One best friend", "A hundred good friends"),
     ]
 
-    async def send_wyr(interaction: discord.Interaction):
+    def _wyr_content():
         question, option_a, option_b = random.choice(WYR_PROMPTS)
-        content = f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
-        await interaction.response.send_message(
-            content,
-            view=WouldYouRatherView(),
-        )
+        return f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
+
+    async def _advance_wyr(channel, old_message_id: int):
+        try:
+            await asyncio.sleep(GAME_ANSWER_WINDOW)
+            state = game_rounds["wyr"].get(channel.id)
+            if not state or state["message_id"] != old_message_id:
+                return
+            message = await channel.send(_wyr_content(), view=WouldYouRatherView())
+            state["message_id"] = message.id
+            state["task"] = None
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            print(f"❌ Would You Rather round advance failed: {exc}")
 
     class WouldYouRatherView(discord.ui.View):
         def __init__(self):
             super().__init__(timeout=None)
 
         async def _choose(self, interaction: discord.Interaction, choice: str):
+            state = game_rounds["wyr"].get(interaction.channel_id)
+            if not state or state["message_id"] != interaction.message.id:
+                return await interaction.response.send_message(
+                    "⚠️ That round has already moved on.", ephemeral=True
+                )
+
             await interaction.response.defer()
             await interaction.followup.send(
                 f"🤔 **<@{interaction.user.id}> chose {choice}!**"
             )
-            if interaction.channel is not None:
-                question, option_a, option_b = random.choice(WYR_PROMPTS)
-                content = f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
-                await interaction.channel.send(content, view=WouldYouRatherView())
+
+            task = state.get("task")
+            if task is None or task.done():
+                state["task"] = asyncio.create_task(
+                    _advance_wyr(interaction.channel, interaction.message.id)
+                )
 
         @discord.ui.button(label="A", emoji="🅰️", style=discord.ButtonStyle.primary, custom_id="shade:wyr:a")
         async def option_a_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -307,7 +330,13 @@ def setup(bot: commands.Bot):
 
     @bot.tree.command(name="wouldyourather", description="Start a Would You Rather game")
     async def wouldyourather(interaction: discord.Interaction):
-        await send_wyr(interaction)
+        await interaction.response.send_message(_wyr_content(), view=WouldYouRatherView())
+        message = await interaction.original_response()
+        channel_id = interaction.channel_id
+        previous = game_rounds["wyr"].get(channel_id)
+        if previous and previous.get("task"):
+            previous["task"].cancel()
+        game_rounds["wyr"][channel_id] = {"message_id": message.id, "task": None}
 
     NHIE_PROMPTS = [
         "Never have I ever lied about why I was late.",
@@ -324,23 +353,44 @@ def setup(bot: commands.Bot):
         "Never have I ever sent a risky text and immediately regretted it.",
     ]
 
-    def _nhie_message():
-        return f"🙈 **Never Have I Ever...**\\n\\n{random.choice(NHIE_PROMPTS)}"
+    def _nhie_content():
+        return f"🙈 **Never Have I Ever...**\n\n{random.choice(NHIE_PROMPTS)}"
+
+    async def _advance_nhie(channel, old_message_id: int):
+        try:
+            await asyncio.sleep(GAME_ANSWER_WINDOW)
+            state = game_rounds["nhie"].get(channel.id)
+            if not state or state["message_id"] != old_message_id:
+                return
+            message = await channel.send(_nhie_content(), view=NeverHaveIEverView())
+            state["message_id"] = message.id
+            state["task"] = None
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            print(f"❌ Never Have I Ever round advance failed: {exc}")
 
     class NeverHaveIEverView(discord.ui.View):
         def __init__(self):
             super().__init__(timeout=None)
 
         async def _answer(self, interaction: discord.Interaction, answer: str):
-            # Acknowledge the click and tag the player who answered, then start the next round.
+            state = game_rounds["nhie"].get(interaction.channel_id)
+            if not state or state["message_id"] != interaction.message.id:
+                return await interaction.response.send_message(
+                    "⚠️ That round has already moved on.", ephemeral=True
+                )
+
             await interaction.response.defer()
             await interaction.followup.send(
                 f"🙈 **<@{interaction.user.id}> says: {answer}!**"
             )
-            await interaction.followup.send(
-                f"🙈 **Never Have I Ever...**\n\n{random.choice(NHIE_PROMPTS)}",
-                view=NeverHaveIEverView(),
-            )
+
+            task = state.get("task")
+            if task is None or task.done():
+                state["task"] = asyncio.create_task(
+                    _advance_nhie(interaction.channel, interaction.message.id)
+                )
 
         @discord.ui.button(label="I Have", emoji="🙋", style=discord.ButtonStyle.primary, custom_id="shade:nhie:have")
         async def have_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -352,26 +402,13 @@ def setup(bot: commands.Bot):
 
     @bot.tree.command(name="neverhaveiever", description="Start a Never Have I Ever game")
     async def neverhaveiever(interaction: discord.Interaction):
-        try:
-            await interaction.response.send_message(
-                _nhie_message(),
-                view=NeverHaveIEverView(),
-            )
-        except Exception as exc:
-            print(f"❌ Never Have I Ever failed: {exc}")
-            try:
-                if not interaction.response.is_done():
-                    await interaction.response.send_message(
-                        "⚠️ Shade hit an error starting Never Have I Ever. Check the bot logs.",
-                        ephemeral=True,
-                    )
-                else:
-                    await interaction.followup.send(
-                        "⚠️ Shade hit an error starting Never Have I Ever. Check the bot logs.",
-                        ephemeral=True,
-                    )
-            except Exception as followup_exc:
-                print(f"❌ Never Have I Ever error response failed: {followup_exc}")
+        await interaction.response.send_message(_nhie_content(), view=NeverHaveIEverView())
+        message = await interaction.original_response()
+        channel_id = interaction.channel_id
+        previous = game_rounds["nhie"].get(channel_id)
+        if previous and previous.get("task"):
+            previous["task"].cancel()
+        game_rounds["nhie"][channel_id] = {"message_id": message.id, "task": None}
 
     @bot.tree.command(name="thisorthat", description="Get a This or That choice")
     async def thisorthat(interaction: discord.Interaction):
