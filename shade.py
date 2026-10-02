@@ -483,6 +483,7 @@ async def dare(interaction: discord.Interaction):
 import universal
 import community
 import personal
+import moderation
 
 moderation.setup(bot)
 personal.setup(bot)
