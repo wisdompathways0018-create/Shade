@@ -410,20 +410,17 @@ def setup(bot: commands.Bot):
         return f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
 
     async def _advance_wyr(channel, old_message_id: int):
-        """Keep one WYR round loop alive and post a new question every 8 seconds."""
         try:
-            current_message_id = old_message_id
-            while True:
-                await asyncio.sleep(GAME_ANSWER_WINDOW)
-                state = game_rounds["wyr"].get(channel.id)
-                if not state or state["message_id"] != current_message_id:
-                    return
-                message = await channel.send(
-                    _wyr_content(channel.id),
-                    view=WouldYouRatherView(),
-                )
-                state["message_id"] = message.id
-                current_message_id = message.id
+            await asyncio.sleep(GAME_ANSWER_WINDOW)
+            state = game_rounds["wyr"].get(channel.id)
+            if not state or state["message_id"] != old_message_id:
+                return
+            message = await channel.send(
+                _wyr_content(channel.id),
+                view=WouldYouRatherView(),
+            )
+            state["message_id"] = message.id
+            state["task"] = None
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -445,9 +442,11 @@ def setup(bot: commands.Bot):
                 f"🤔 **<@{interaction.user.id}> chose {choice}!**"
             )
 
-            # The round timer is started when the question is posted, not when
-            # the first person answers. This guarantees automatic progression
-            # even if nobody clicks, while still allowing multiple answers.
+            task = state.get("task")
+            if task is None or task.done():
+                state["task"] = asyncio.create_task(
+                    _advance_wyr(interaction.channel, interaction.message.id)
+                )
 
         @discord.ui.button(label="A", emoji="🅰️", style=discord.ButtonStyle.primary, custom_id="shade:wyr:a")
         async def option_a_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -467,7 +466,7 @@ def setup(bot: commands.Bot):
             previous["task"].cancel()
         game_rounds["wyr"][channel_id] = {
             "message_id": message.id,
-            "task": asyncio.create_task(_advance_wyr(interaction.channel, message.id)),
+            "task": None,
             "remaining": game_rounds["wyr"].get(channel_id, {}).get("remaining", []),
         }
 
@@ -648,20 +647,17 @@ def setup(bot: commands.Bot):
         return f"🙈 **Never Have I Ever...**\n\n{_next_game_prompt('nhie', channel_id, NHIE_PROMPTS)}"
 
     async def _advance_nhie(channel, old_message_id: int):
-        """Keep one NHIE round loop alive and post a new question every 8 seconds."""
         try:
-            current_message_id = old_message_id
-            while True:
-                await asyncio.sleep(GAME_ANSWER_WINDOW)
-                state = game_rounds["nhie"].get(channel.id)
-                if not state or state["message_id"] != current_message_id:
-                    return
-                message = await channel.send(
-                    _nhie_content(channel.id),
-                    view=NeverHaveIEverView(),
-                )
-                state["message_id"] = message.id
-                current_message_id = message.id
+            await asyncio.sleep(GAME_ANSWER_WINDOW)
+            state = game_rounds["nhie"].get(channel.id)
+            if not state or state["message_id"] != old_message_id:
+                return
+            message = await channel.send(
+                _nhie_content(channel.id),
+                view=NeverHaveIEverView(),
+            )
+            state["message_id"] = message.id
+            state["task"] = None
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -683,9 +679,11 @@ def setup(bot: commands.Bot):
                 f"🙈 **<@{interaction.user.id}> says: {answer}!**"
             )
 
-            # The round timer is started when the question is posted, not when
-            # the first person answers. This guarantees automatic progression
-            # even if nobody clicks, while still allowing multiple answers.
+            task = state.get("task")
+            if task is None or task.done():
+                state["task"] = asyncio.create_task(
+                    _advance_nhie(interaction.channel, interaction.message.id)
+                )
 
         @discord.ui.button(label="I Have", emoji="🙋", style=discord.ButtonStyle.primary, custom_id="shade:nhie:have")
         async def have_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -705,7 +703,7 @@ def setup(bot: commands.Bot):
             previous["task"].cancel()
         game_rounds["nhie"][channel_id] = {
             "message_id": message.id,
-            "task": asyncio.create_task(_advance_nhie(interaction.channel, message.id)),
+            "task": None,
             "remaining": game_rounds["nhie"].get(channel_id, {}).get("remaining", []),
         }
 
