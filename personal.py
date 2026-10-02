@@ -83,6 +83,10 @@ async def _reminder_loop(bot: commands.Bot):
 def setup(bot: commands.Bot):
     _owner_profile()
 
+    # Register persistent game buttons so they still work after a bot restart.
+    bot.add_view(WouldYouRatherView())
+    bot.add_view(NeverHaveIEverView())
+
     @bot.tree.command(name="profile", description="Show Shade's owner's profile")
     async def profile(interaction: discord.Interaction):
         p = _owner_profile()
@@ -305,6 +309,49 @@ def setup(bot: commands.Bot):
     @bot.tree.command(name="wouldyourather", description="Start a Would You Rather game")
     async def wouldyourather(interaction: discord.Interaction):
         await send_wyr(interaction)
+
+    NHIE_PROMPTS = [
+        "Never have I ever lied about why I was late.",
+        "Never have I ever stalked someone's social media.",
+        "Never have I ever sent a message to the wrong person.",
+        "Never have I ever pretended to understand something I didn't.",
+        "Never have I ever had a crush on someone I shouldn't.",
+        "Never have I ever laughed at the worst possible moment.",
+        "Never have I ever stayed up all night for no good reason.",
+        "Never have I ever deleted a message because I regretted sending it.",
+        "Never have I ever forgotten someone's name right after meeting them.",
+        "Never have I ever laughed when I was supposed to be serious.",
+        "Never have I ever blamed someone else for something I did.",
+        "Never have I ever sent a risky text and immediately regretted it.",
+    ]
+
+    async def send_nhie(interaction: discord.Interaction):
+        prompt = random.choice(NHIE_PROMPTS)
+        await interaction.response.send_message(
+            f"🙈 **Never Have I Ever...**\n\n{prompt}",
+            view=NeverHaveIEverView(),
+        )
+
+    class NeverHaveIEverView(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=None)
+
+        async def _answer(self, interaction: discord.Interaction, answer: str):
+            await interaction.response.defer()
+            if interaction.channel is not None:
+                prompt = random.choice(NHIE_PROMPTS)
+                await interaction.channel.send(
+                    f"🙈 **Never Have I Ever...**\n\n{prompt}",
+                    view=NeverHaveIEverView(),
+                )
+
+        @discord.ui.button(label="I Have", emoji="🙋", style=discord.ButtonStyle.primary, custom_id="shade:nhie:have")
+        async def have_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await self._answer(interaction, "I have")
+
+        @discord.ui.button(label="Never", emoji="😇", style=discord.ButtonStyle.secondary, custom_id="shade:nhie:never")
+        async def never_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await self._answer(interaction, "Never")
 
     @bot.tree.command(name="neverhaveiever", description="Start a Never Have I Ever game")
     async def neverhaveiever(interaction: discord.Interaction):
