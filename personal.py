@@ -88,6 +88,17 @@ def setup(bot: commands.Bot):
     game_rounds = {"wyr": {}, "nhie": {}}
     GAME_ANSWER_WINDOW = 8.0
 
+    def _next_game_prompt(kind: str, channel_id: int, prompts: list):
+        """Return a prompt without repeating until the channel's pool is exhausted."""
+        state = game_rounds[kind].setdefault(
+            channel_id,
+            {"message_id": None, "task": None, "remaining": []},
+        )
+        if not state["remaining"]:
+            state["remaining"] = list(range(len(prompts)))
+            random.shuffle(state["remaining"])
+        return prompts[state["remaining"].pop()]
+
     @bot.tree.command(name="profile", description="Show Shade's owner's profile")
     async def profile(interaction: discord.Interaction):
         p = _owner_profile()
@@ -280,8 +291,8 @@ def setup(bot: commands.Bot):
         ("Would you rather have one best friend or a hundred good friends?", "One best friend", "A hundred good friends"),
     ]
 
-    def _wyr_content():
-        question, option_a, option_b = random.choice(WYR_PROMPTS)
+    def _wyr_content(channel_id: int):
+        question, option_a, option_b = _next_game_prompt("wyr", channel_id, WYR_PROMPTS)
         return f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
 
     async def _advance_wyr(channel, old_message_id: int):
@@ -290,7 +301,7 @@ def setup(bot: commands.Bot):
             state = game_rounds["wyr"].get(channel.id)
             if not state or state["message_id"] != old_message_id:
                 return
-            message = await channel.send(_wyr_content(), view=WouldYouRatherView())
+            message = await channel.send(_wyr_content(channel.id), view=WouldYouRatherView())
             state["message_id"] = message.id
             state["task"] = None
         except asyncio.CancelledError:
@@ -330,7 +341,7 @@ def setup(bot: commands.Bot):
 
     @bot.tree.command(name="wouldyourather", description="Start a Would You Rather game")
     async def wouldyourather(interaction: discord.Interaction):
-        await interaction.response.send_message(_wyr_content(), view=WouldYouRatherView())
+        await interaction.response.send_message(_wyr_content(interaction.channel_id), view=WouldYouRatherView())
         message = await interaction.original_response()
         channel_id = interaction.channel_id
         previous = game_rounds["wyr"].get(channel_id)
@@ -353,8 +364,8 @@ def setup(bot: commands.Bot):
         "Never have I ever sent a risky text and immediately regretted it.",
     ]
 
-    def _nhie_content():
-        return f"🙈 **Never Have I Ever...**\n\n{random.choice(NHIE_PROMPTS)}"
+    def _nhie_content(channel_id: int):
+        return f"🙈 **Never Have I Ever...**\n\n{_next_game_prompt('nhie', channel_id, NHIE_PROMPTS)}"
 
     async def _advance_nhie(channel, old_message_id: int):
         try:
@@ -362,7 +373,7 @@ def setup(bot: commands.Bot):
             state = game_rounds["nhie"].get(channel.id)
             if not state or state["message_id"] != old_message_id:
                 return
-            message = await channel.send(_nhie_content(), view=NeverHaveIEverView())
+            message = await channel.send(_nhie_content(channel.id), view=NeverHaveIEverView())
             state["message_id"] = message.id
             state["task"] = None
         except asyncio.CancelledError:
@@ -402,7 +413,7 @@ def setup(bot: commands.Bot):
 
     @bot.tree.command(name="neverhaveiever", description="Start a Never Have I Ever game")
     async def neverhaveiever(interaction: discord.Interaction):
-        await interaction.response.send_message(_nhie_content(), view=NeverHaveIEverView())
+        await interaction.response.send_message(_nhie_content(interaction.channel_id), view=NeverHaveIEverView())
         message = await interaction.original_response()
         channel_id = interaction.channel_id
         previous = game_rounds["nhie"].get(channel_id)
