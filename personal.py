@@ -42,7 +42,7 @@ def _owner_only(interaction: discord.Interaction) -> bool:
 
 def _owner_profile():
     profile = data.setdefault("profile", {})
-    profile.setdefault("bio", "Just me and Shade.")
+    profile.setdefault("bio", "Quiet mind. Sharp edge. Built different. I keep my circle small, my standards high, and my path my own. 🌑")
     profile.setdefault("mood", "Unknown")
     profile.setdefault("quotes", [])
     profile.setdefault("notes", [])
