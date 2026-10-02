@@ -448,7 +448,6 @@ def setup(bot: commands.Bot):
             )
 
             state["answer_started"] = True
-            state["answer_started"] = True
             task = state.get("task")
             if task is None or task.done():
                 state["task"] = asyncio.create_task(
