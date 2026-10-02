@@ -437,23 +437,24 @@ def setup(bot: commands.Bot):
 
         async def _choose(self, interaction: discord.Interaction, choice: str):
             state = game_rounds["wyr"].get(interaction.channel_id)
-            if not state or state["message_id"] != interaction.message.id:
-                return await interaction.response.send_message(
-                    "⚠️ That round has already moved on.", ephemeral=True
-                )
 
+            # Every question remains answerable. A late answer to an older
+            # question is recorded, but only the latest question can start
+            # the 8-second countdown for the next question.
             await interaction.response.defer()
             await interaction.followup.send(
                 f"🤔 **<@{interaction.user.id}> chose {choice}!**"
             )
 
+            if not state or state["message_id"] != interaction.message.id:
+                return
+
             state["answer_started"] = True
             task = state.get("task")
-            if task is not None and not task.done():
-                task.cancel()
-            state["task"] = asyncio.create_task(
-                _advance_wyr(interaction.channel, interaction.message.id)
-            )
+            if task is None or task.done():
+                state["task"] = asyncio.create_task(
+                    _advance_wyr(interaction.channel, interaction.message.id)
+                )
 
         @discord.ui.button(label="A", emoji="🅰️", style=discord.ButtonStyle.primary, custom_id="shade:wyr:a")
         async def option_a_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -682,16 +683,19 @@ def setup(bot: commands.Bot):
 
         async def _answer(self, interaction: discord.Interaction, answer: str):
             state = game_rounds["nhie"].get(interaction.channel_id)
-            if not state or state["message_id"] != interaction.message.id:
-                return await interaction.response.send_message(
-                    "⚠️ That round has already moved on.", ephemeral=True
-                )
 
+            # Every question remains answerable. A late answer to an older
+            # question is recorded, but only the latest question can start
+            # the 8-second countdown for the next question.
             await interaction.response.defer()
             await interaction.followup.send(
                 f"🙈 **<@{interaction.user.id}> says: {answer}!**"
             )
 
+            if not state or state["message_id"] != interaction.message.id:
+                return
+
+            state["answer_started"] = True
             task = state.get("task")
             if task is None or task.done():
                 state["task"] = asyncio.create_task(
