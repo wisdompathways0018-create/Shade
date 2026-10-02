@@ -449,10 +449,11 @@ def setup(bot: commands.Bot):
 
             state["answer_started"] = True
             task = state.get("task")
-            if task is None or task.done():
-                state["task"] = asyncio.create_task(
-                    _advance_wyr(interaction.channel, interaction.message.id)
-                )
+            if task is not None and not task.done():
+                task.cancel()
+            state["task"] = asyncio.create_task(
+                _advance_wyr(interaction.channel, interaction.message.id)
+            )
 
         @discord.ui.button(label="A", emoji="🅰️", style=discord.ButtonStyle.primary, custom_id="shade:wyr:a")
         async def option_a_button(self, interaction: discord.Interaction, button: discord.ui.Button):
