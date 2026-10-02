@@ -83,10 +83,6 @@ async def _reminder_loop(bot: commands.Bot):
 def setup(bot: commands.Bot):
     _owner_profile()
 
-    # Register persistent game buttons so they still work after a bot restart.
-    bot.add_view(WouldYouRatherView())
-    bot.add_view(NeverHaveIEverView())
-
     @bot.tree.command(name="profile", description="Show Shade's owner's profile")
     async def profile(interaction: discord.Interaction):
         p = _owner_profile()
@@ -393,6 +389,10 @@ def setup(bot: commands.Bot):
                 "🖤 Personality: personal, playful, direct, and built around its owner.",
                 ephemeral=True,
             )
+    # Register persistent game buttons so they still work after a bot restart.
+    bot.add_view(WouldYouRatherView())
+    bot.add_view(NeverHaveIEverView())
+
 
 def start_tasks(bot: commands.Bot):
     """Start Shade personal background tasks after the event loop is running."""
