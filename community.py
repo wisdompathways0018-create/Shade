@@ -224,4 +224,4 @@ def setup(bot: commands.Bot):
         except discord.HTTPException:
             pass
 
-    bot.loop.create_task(_birthday_loop(bot))
+    # Automatic birthday announcements are disabled.\n    # Birthday data and the /birthday command remain available without auto-wishing.
