@@ -321,39 +321,51 @@ def setup(bot: commands.Bot):
         "Never have I ever sent a risky text and immediately regretted it.",
     ]
 
-    async def send_nhie(interaction: discord.Interaction):
-        # Acknowledge immediately so Discord never reports "The application did not respond".
-        await interaction.response.defer()
-        prompt = random.choice(NHIE_PROMPTS)
-        await interaction.followup.send(
-            f"🙈 **Never Have I Ever...**\n\n{prompt}",
-            view=NeverHaveIEverView(),
-        )
+    def _nhie_message():
+        return f"🙈 **Never Have I Ever...**\\n\\n{random.choice(NHIE_PROMPTS)}"
 
     class NeverHaveIEverView(discord.ui.View):
         def __init__(self):
             super().__init__(timeout=None)
 
-        async def _answer(self, interaction: discord.Interaction, answer: str):
+        async def _answer(self, interaction: discord.Interaction):
+            # Acknowledge the button click first, then post the next round.
             await interaction.response.defer()
-            if interaction.channel is not None:
-                prompt = random.choice(NHIE_PROMPTS)
-                await interaction.channel.send(
-                    f"🙈 **Never Have I Ever...**\n\n{prompt}",
-                    view=NeverHaveIEverView(),
-                )
+            await interaction.followup.send(
+                _nhie_message(),
+                view=NeverHaveIEverView(),
+            )
 
         @discord.ui.button(label="I Have", emoji="🙋", style=discord.ButtonStyle.primary, custom_id="shade:nhie:have")
         async def have_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await self._answer(interaction, "I have")
+            await self._answer(interaction)
 
         @discord.ui.button(label="Never", emoji="😇", style=discord.ButtonStyle.secondary, custom_id="shade:nhie:never")
         async def never_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await self._answer(interaction, "Never")
+            await self._answer(interaction)
 
     @bot.tree.command(name="neverhaveiever", description="Start a Never Have I Ever game")
     async def neverhaveiever(interaction: discord.Interaction):
-        await send_nhie(interaction)
+        try:
+            await interaction.response.send_message(
+                _nhie_message(),
+                view=NeverHaveIEverView(),
+            )
+        except Exception as exc:
+            print(f"❌ Never Have I Ever failed: {exc}")
+            try:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        "⚠️ Shade hit an error starting Never Have I Ever. Check the bot logs.",
+                        ephemeral=True,
+                    )
+                else:
+                    await interaction.followup.send(
+                        "⚠️ Shade hit an error starting Never Have I Ever. Check the bot logs.",
+                        ephemeral=True,
+                    )
+            except Exception as followup_exc:
+                print(f"❌ Never Have I Ever error response failed: {followup_exc}")
 
     @bot.tree.command(name="thisorthat", description="Get a This or That choice")
     async def thisorthat(interaction: discord.Interaction):
