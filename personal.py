@@ -260,17 +260,53 @@ def setup(bot: commands.Bot):
     async def dice(interaction: discord.Interaction, sides: app_commands.Range[int, 2, 100] = 6):
         await interaction.response.send_message(f"🎲 You rolled **{random.randint(1, sides)}** / {sides}")
 
-    @bot.tree.command(name="wouldyourather", description="Ask a would-you-rather question")
-    async def wouldyourather(interaction: discord.Interaction):
+    class WouldYouRatherView(discord.ui.View):
+        def __init__(self, question, option_a, option_b):
+            super().__init__(timeout=None)
+            self.question = question
+            self.option_a = option_a
+            self.option_b = option_b
+
+        @discord.ui.button(label="A", emoji="🅰️", style=discord.ButtonStyle.primary, custom_id="shade:wyr:a")
+        async def option_a_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.send_message(
+                f"🤔 **{interaction.user.display_name}** chooses **A** — {self.option_a}"
+            )
+
+        @discord.ui.button(label="B", emoji="🅱️", style=discord.ButtonStyle.secondary, custom_id="shade:wyr:b")
+        async def option_b_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.send_message(
+                f"🤔 **{interaction.user.display_name}** chooses **B** — {self.option_b}"
+            )
+
+        @discord.ui.button(label="New", emoji="🔄", style=discord.ButtonStyle.success, custom_id="shade:wyr:new")
+        async def new_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await send_wyr(interaction)
+
+    async def send_wyr(interaction: discord.Interaction):
         prompts = [
-            "Would you rather know the truth about your future or be able to change one past decision?",
-            "Would you rather always be 10 minutes early or always be 20 minutes late?",
-            "Would you rather have unlimited money or unlimited free time?",
-            "Would you rather read minds or become invisible?",
-            "Would you rather never lose your phone or never lose your wallet?",
-            "Would you rather travel anywhere instantly or never need to sleep?",
+            ("Would you rather know the truth about your future or change one past decision?", "Know my future", "Change one past decision"),
+            ("Would you rather always be 10 minutes early or 20 minutes late?", "10 minutes early", "20 minutes late"),
+            ("Would you rather have unlimited money or unlimited free time?", "Unlimited money", "Unlimited free time"),
+            ("Would you rather read minds or become invisible?", "Read minds", "Become invisible"),
+            ("Would you rather never lose your phone or never lose your wallet?", "Never lose my phone", "Never lose my wallet"),
+            ("Would you rather travel anywhere instantly or never need to sleep?", "Travel anywhere instantly", "Never need to sleep"),
+            ("Would you rather be able to pause time or rewind time?", "Pause time", "Rewind time"),
+            ("Would you rather be famous for your talent or respected for your character?", "Famous for my talent", "Respected for my character"),
+            ("Would you rather have your dream house or your dream car?", "Dream house", "Dream car"),
+            ("Would you rather always know when someone is lying or always get away with lying?", "Know when someone is lying", "Always get away with lying"),
+            ("Would you rather live in the mountains or by the ocean?", "Mountains", "Ocean"),
+            ("Would you rather have one best friend or a hundred good friends?", "One best friend", "A hundred good friends"),
         ]
-        await interaction.response.send_message(f"🤔 **{random.choice(prompts)}**")
+        question, option_a, option_b = random.choice(prompts)
+        await interaction.response.send_message(
+            f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}",
+            view=WouldYouRatherView(question, option_a, option_b),
+        )
+
+    @bot.tree.command(name="wouldyourather", description="Start a Would You Rather game")
+    async def wouldyourather(interaction: discord.Interaction):
+        await send_wyr(interaction)
 
     @bot.tree.command(name="neverhaveiever", description="Get a Never Have I Ever prompt")
     async def neverhaveiever(interaction: discord.Interaction):
