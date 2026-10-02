@@ -260,98 +260,51 @@ def setup(bot: commands.Bot):
     async def dice(interaction: discord.Interaction, sides: app_commands.Range[int, 2, 100] = 6):
         await interaction.response.send_message(f"🎲 You rolled **{random.randint(1, sides)}** / {sides}")
 
+    WYR_PROMPTS = [
+        ("Would you rather know the truth about your future or change one past decision?", "Know my future", "Change one past decision"),
+        ("Would you rather always be 10 minutes early or 20 minutes late?", "10 minutes early", "20 minutes late"),
+        ("Would you rather have unlimited money or unlimited free time?", "Unlimited money", "Unlimited free time"),
+        ("Would you rather read minds or become invisible?", "Read minds", "Become invisible"),
+        ("Would you rather never lose your phone or never lose your wallet?", "Never lose my phone", "Never lose my wallet"),
+        ("Would you rather travel anywhere instantly or never need to sleep?", "Travel anywhere instantly", "Never need to sleep"),
+        ("Would you rather be able to pause time or rewind time?", "Pause time", "Rewind time"),
+        ("Would you rather be famous for your talent or respected for your character?", "Famous for my talent", "Respected for my character"),
+        ("Would you rather have your dream house or your dream car?", "Dream house", "Dream car"),
+        ("Would you rather always know when someone is lying or always get away with lying?", "Know when someone is lying", "Always get away with lying"),
+        ("Would you rather live in the mountains or by the ocean?", "Mountains", "Ocean"),
+        ("Would you rather have one best friend or a hundred good friends?", "One best friend", "A hundred good friends"),
+    ]
+
+    async def send_wyr(interaction: discord.Interaction):
+        question, option_a, option_b = random.choice(WYR_PROMPTS)
+        content = f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
+        await interaction.response.send_message(
+            content,
+            view=WouldYouRatherView(),
+        )
+
     class WouldYouRatherView(discord.ui.View):
-        def __init__(self, question, option_a, option_b):
+        def __init__(self):
             super().__init__(timeout=None)
-            self.question = question
-            self.option_a = option_a
-            self.option_b = option_b
+
+        async def _choose(self, interaction: discord.Interaction, choice: str):
+            await interaction.response.defer()
+            if interaction.channel is not None:
+                question, option_a, option_b = random.choice(WYR_PROMPTS)
+                content = f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
+                await interaction.channel.send(content, view=WouldYouRatherView())
 
         @discord.ui.button(label="A", emoji="🅰️", style=discord.ButtonStyle.primary, custom_id="shade:wyr:a")
         async def option_a_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await interaction.response.send_message(
-                f"🤔 **{interaction.user.display_name}** chooses **A** — {self.option_a}"
-            )
+            await self._choose(interaction, "A")
 
         @discord.ui.button(label="B", emoji="🅱️", style=discord.ButtonStyle.secondary, custom_id="shade:wyr:b")
         async def option_b_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await interaction.response.send_message(
-                f"🤔 **{interaction.user.display_name}** chooses **B** — {self.option_b}"
-            )
-
-        @discord.ui.button(label="New", emoji="🔄", style=discord.ButtonStyle.success, custom_id="shade:wyr:new")
-        async def new_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await send_wyr(interaction)
-
-    async def send_wyr(interaction: discord.Interaction):
-        prompts = [
-            ("Would you rather know the truth about your future or change one past decision?", "Know my future", "Change one past decision"),
-            ("Would you rather always be 10 minutes early or 20 minutes late?", "10 minutes early", "20 minutes late"),
-            ("Would you rather have unlimited money or unlimited free time?", "Unlimited money", "Unlimited free time"),
-            ("Would you rather read minds or become invisible?", "Read minds", "Become invisible"),
-            ("Would you rather never lose your phone or never lose your wallet?", "Never lose my phone", "Never lose my wallet"),
-            ("Would you rather travel anywhere instantly or never need to sleep?", "Travel anywhere instantly", "Never need to sleep"),
-            ("Would you rather be able to pause time or rewind time?", "Pause time", "Rewind time"),
-            ("Would you rather be famous for your talent or respected for your character?", "Famous for my talent", "Respected for my character"),
-            ("Would you rather have your dream house or your dream car?", "Dream house", "Dream car"),
-            ("Would you rather always know when someone is lying or always get away with lying?", "Know when someone is lying", "Always get away with lying"),
-            ("Would you rather live in the mountains or by the ocean?", "Mountains", "Ocean"),
-            ("Would you rather have one best friend or a hundred good friends?", "One best friend", "A hundred good friends"),
-        ]
-        question, option_a, option_b = random.choice(prompts)
-        await interaction.response.send_message(
-            f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}",
-            view=WouldYouRatherView(question, option_a, option_b),
-        )
+            await self._choose(interaction, "B")
 
     @bot.tree.command(name="wouldyourather", description="Start a Would You Rather game")
     async def wouldyourather(interaction: discord.Interaction):
         await send_wyr(interaction)
-
-    NHIE_PROMPTS = [
-        "Never have I ever lied about why I was late.",
-        "Never have I ever stalked someone's social media.",
-        "Never have I ever sent a message to the wrong person.",
-        "Never have I ever pretended to understand something I didn't.",
-        "Never have I ever had a crush on someone I shouldn't.",
-        "Never have I ever laughed at the worst possible moment.",
-        "Never have I ever stayed up all night for no good reason.",
-        "Never have I ever deleted a message because I regretted sending it.",
-        "Never have I ever forgotten someone's name right after meeting them.",
-        "Never have I ever laughed when I was supposed to be serious.",
-        "Never have I ever blamed someone else for something I did.",
-        "Never have I ever sent a risky text and immediately regretted it.",
-    ]
-
-    async def send_nhie(interaction: discord.Interaction, edit=False):
-        prompt = random.choice(NHIE_PROMPTS)
-        content = f"🙈 **Never Have I Ever...**\n\n{prompt}"
-        view = NeverHaveIEverView()
-        if edit:
-            await interaction.response.edit_message(content=content, view=view)
-        else:
-            await interaction.response.send_message(content, view=view)
-
-    class NeverHaveIEverView(discord.ui.View):
-        def __init__(self):
-            super().__init__(timeout=None)
-
-        async def _answer(self, interaction: discord.Interaction, answer: str):
-            await interaction.response.defer()
-            if interaction.channel is not None:
-                prompt = random.choice(NHIE_PROMPTS)
-                await interaction.channel.send(
-                    f"🙈 **Never Have I Ever...**\n\n{prompt}",
-                    view=NeverHaveIEverView(),
-                )
-
-        @discord.ui.button(label="I Have", emoji="🙋", style=discord.ButtonStyle.primary, custom_id="shade:nhie:have")
-        async def have_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await self._answer(interaction, "I have")
-
-        @discord.ui.button(label="Never", emoji="😇", style=discord.ButtonStyle.secondary, custom_id="shade:nhie:never")
-        async def never_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await self._answer(interaction, "Never")
 
     @bot.tree.command(name="neverhaveiever", description="Start a Never Have I Ever game")
     async def neverhaveiever(interaction: discord.Interaction):
