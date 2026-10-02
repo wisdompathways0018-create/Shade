@@ -308,17 +308,51 @@ def setup(bot: commands.Bot):
     async def wouldyourather(interaction: discord.Interaction):
         await send_wyr(interaction)
 
-    @bot.tree.command(name="neverhaveiever", description="Get a Never Have I Ever prompt")
-    async def neverhaveiever(interaction: discord.Interaction):
+    class NeverHaveIEverView(discord.ui.View):
+        def __init__(self, prompt):
+            super().__init__(timeout=None)
+            self.prompt = prompt
+
+        @discord.ui.button(label="I Have", emoji="🙋", style=discord.ButtonStyle.primary, custom_id="shade:nhie:have")
+        async def have_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.send_message(
+                f"🙋 **{interaction.user.display_name}** says: **I have!**"
+            )
+
+        @discord.ui.button(label="Never", emoji="😇", style=discord.ButtonStyle.secondary, custom_id="shade:nhie:never")
+        async def never_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.send_message(
+                f"😇 **{interaction.user.display_name}** says: **Never!**"
+            )
+
+        @discord.ui.button(label="New", emoji="🔄", style=discord.ButtonStyle.success, custom_id="shade:nhie:new")
+        async def new_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await send_nhie(interaction)
+
+    async def send_nhie(interaction: discord.Interaction):
         prompts = [
             "Never have I ever lied about why I was late.",
             "Never have I ever stalked someone's social media.",
             "Never have I ever sent a message to the wrong person.",
+            "Never have I ever sent a message to the wrong person.",
             "Never have I ever pretended to understand something I didn't.",
             "Never have I ever had a crush on someone I shouldn't.",
             "Never have I ever laughed at the worst possible moment.",
+            "Never have I ever stayed up all night for no good reason.",
+            "Never have I ever deleted a message because I regretted sending it.",
+            "Never have I ever forgotten someone's name right after meeting them.",
+            "Never have I ever laughed when I was supposed to be serious.",
+            "Never have I ever blamed someone else for something I did.",
         ]
-        await interaction.response.send_message(f"🙈 **{random.choice(prompts)}**")
+        prompt = random.choice(prompts)
+        await interaction.response.send_message(
+            f"🙈 **Never Have I Ever...**\n\n{prompt}",
+            view=NeverHaveIEverView(prompt),
+        )
+
+    @bot.tree.command(name="neverhaveiever", description="Start a Never Have I Ever game")
+    async def neverhaveiever(interaction: discord.Interaction):
+        await send_nhie(interaction)
 
     @bot.tree.command(name="thisorthat", description="Get a This or That choice")
     async def thisorthat(interaction: discord.Interaction):
