@@ -471,12 +471,8 @@ async def dare(interaction: discord.Interaction):
     await interaction.response.send_message(f"🔴 **Dare:** {_next_prompt(DARE_PROMPTS, _dare_bags, _last_dare, interaction.guild.id if interaction.guild else 0)}")
 
 
-import universal
-import community
 import personal
-import moderation
 
-moderation.setup(bot)
 personal.setup(bot)
 
 
