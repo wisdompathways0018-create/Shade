@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from config import get_server, save_server
-from owner import OWNER_USER_ID
+from owner import OWNER_USER_ID, is_owner
 
 TOKEN = os.getenv("TOKEN")
 
@@ -49,7 +49,24 @@ async def shade(interaction: discord.Interaction):
 
 @bot.tree.command(name="owner", description="Show Shade's owner")
 async def owner(interaction: discord.Interaction):
-    await interaction.response.send_message(f"🖤 Shade belongs to <@{OWNER_USER_ID}>.")
+    await interaction.response.send_message(
+        f"🖤 Shade belongs to <@{OWNER_USER_ID}>."
+    )
+
+@bot.tree.command(name="shadeabout", description="Show Shade's identity")
+async def shadeabout(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="🌑 Shade",
+        description="A personal Discord bot built around its owner.",
+        color=discord.Color.dark_gray(),
+    )
+    embed.add_field(name="Owner", value=f"<@{OWNER_USER_ID}>", inline=False)
+    embed.add_field(
+        name="Core",
+        value="👑 King • 🔥 Roast • 🎲 Truth • 😈 Dare • 🎲 Truth or Dare",
+        inline=False,
+    )
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="king", description="Choose today's King")
 async def king(interaction: discord.Interaction):
