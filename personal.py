@@ -413,7 +413,11 @@ def setup(bot: commands.Bot):
         try:
             await asyncio.sleep(GAME_ANSWER_WINDOW)
             state = game_rounds["wyr"].get(channel.id)
-            if not state or state["message_id"] != old_message_id:
+            if (
+                not state
+                or state["message_id"] != old_message_id
+                or not state.get("answer_started", False)
+            ):
                 return
             message = await channel.send(
                 _wyr_content(channel.id),
@@ -421,6 +425,7 @@ def setup(bot: commands.Bot):
             )
             state["message_id"] = message.id
             state["task"] = None
+            state["answer_started"] = False
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -442,6 +447,8 @@ def setup(bot: commands.Bot):
                 f"🤔 **<@{interaction.user.id}> chose {choice}!**"
             )
 
+            state["answer_started"] = True
+            state["answer_started"] = True
             task = state.get("task")
             if task is None or task.done():
                 state["task"] = asyncio.create_task(
@@ -467,6 +474,7 @@ def setup(bot: commands.Bot):
         game_rounds["wyr"][channel_id] = {
             "message_id": message.id,
             "task": None,
+            "answer_started": False,
             "remaining": game_rounds["wyr"].get(channel_id, {}).get("remaining", []),
         }
 
@@ -650,7 +658,11 @@ def setup(bot: commands.Bot):
         try:
             await asyncio.sleep(GAME_ANSWER_WINDOW)
             state = game_rounds["nhie"].get(channel.id)
-            if not state or state["message_id"] != old_message_id:
+            if (
+                not state
+                or state["message_id"] != old_message_id
+                or not state.get("answer_started", False)
+            ):
                 return
             message = await channel.send(
                 _nhie_content(channel.id),
@@ -658,6 +670,7 @@ def setup(bot: commands.Bot):
             )
             state["message_id"] = message.id
             state["task"] = None
+            state["answer_started"] = False
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -704,6 +717,7 @@ def setup(bot: commands.Bot):
         game_rounds["nhie"][channel_id] = {
             "message_id": message.id,
             "task": None,
+            "answer_started": False,
             "remaining": game_rounds["nhie"].get(channel_id, {}).get("remaining", []),
         }
 
