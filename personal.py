@@ -321,4 +321,6 @@ def setup(bot: commands.Bot):
                 ephemeral=True,
             )
 
-    asyncio.create_task(_reminder_loop(bot))
+def start_tasks(bot: commands.Bot):
+    """Start Shade personal background tasks after the event loop is running."""
+    return asyncio.create_task(_reminder_loop(bot))
