@@ -289,6 +289,9 @@ def setup(bot: commands.Bot):
 
         async def _choose(self, interaction: discord.Interaction, choice: str):
             await interaction.response.defer()
+            await interaction.followup.send(
+                f"🤔 <@{interaction.user.id}> chose **{choice}**."
+            )
             if interaction.channel is not None:
                 question, option_a, option_b = random.choice(WYR_PROMPTS)
                 content = f"🤔 **Would You Rather?**\n\n{question}\n\n🅰️ **A:** {option_a}\n🅱️ **B:** {option_b}"
@@ -328,9 +331,12 @@ def setup(bot: commands.Bot):
         def __init__(self):
             super().__init__(timeout=None)
 
-        async def _answer(self, interaction: discord.Interaction):
-            # Acknowledge the button click first, then post the next round.
+        async def _answer(self, interaction: discord.Interaction, answer: str):
+            # Acknowledge the click and tag the player who answered, then start the next round.
             await interaction.response.defer()
+            await interaction.followup.send(
+                f"🙈 <@{interaction.user.id}> chose **{answer}**."
+            )
             await interaction.followup.send(
                 _nhie_message(),
                 view=NeverHaveIEverView(),
@@ -338,11 +344,11 @@ def setup(bot: commands.Bot):
 
         @discord.ui.button(label="I Have", emoji="🙋", style=discord.ButtonStyle.primary, custom_id="shade:nhie:have")
         async def have_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await self._answer(interaction)
+            await self._answer(interaction, "I Have")
 
         @discord.ui.button(label="Never", emoji="😇", style=discord.ButtonStyle.secondary, custom_id="shade:nhie:never")
         async def never_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await self._answer(interaction)
+            await self._answer(interaction, "Never")
 
     @bot.tree.command(name="neverhaveiever", description="Start a Never Have I Ever game")
     async def neverhaveiever(interaction: discord.Interaction):
